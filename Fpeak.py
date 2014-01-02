@@ -23,10 +23,12 @@ minusSig=prefix+'Minus.sig'
 plusBed=prefix+'plus.bed'
 minusBed=prefix+'minus.bed'
 tempBed='temp.bed'
+
 def genSigFile(infile, outfile):
     allBin=[]
     allSum=[]
     fi=open(infile)
+    fo=open(outfile,'w')
     nowChr='chr0'
     nowS=1
     nowE=100
@@ -47,7 +49,7 @@ def genSigFile(infile, outfile):
 	    	allBin.append(ChrBin(nowChr, nowS, nowS+bin, sum))
 	    	csum+=sum
 	    	allSum.append(csum)
-	    	#fo.write(('%s\t%d\t%d\t%f\n')%(nowChr,nowS,nowS+bin,1.0*sum/bin))
+	    	fo.write(('%s\t%d\t%d\t.\t%f\n')%(nowChr,nowS,nowS+bin,1.0*sum/bin))
 	    nowChr=chr
 	    nowS=start
 	    sum=0
@@ -56,28 +58,43 @@ def genSigFile(infile, outfile):
 	sum+=num*(end-start)
 	bp+=end-start
     fi.close()
-    fo=open(outfile,'w')
-    left=right=0
-    num=len(allBin)
-    print infile+"\t"+str(num)
-    for i in range(num):
-	while left<i:
-	    if allBin[i].chr==allBin[left].chr and allBin[i].beg-allBin[left].beg<=bgWin:
-	    	break
-	    left+=1
-	while right<num-1:
-	    if allBin[right].end-allBin[i].end>bgWin or allBin[right].chr!=allBin[i].chr:
-	    	break
-	    right+=1
-	if left==0:
-	    sum=allSum[right-1]
-	else:
-	    sum=allSum[right-1]-allSum[left]
-	if sum==0:
-	    sum=1
-	fo.write(('%s\t%d\t%d\t%f\n')%(allBin[i].chr,allBin[i].beg,allBin[i].end,2.0*allBin[i].val*bgWin/bin/sum))
-	#fo.write(('%s\t%d\t%d\t%f\n')%(allBin[i].chr,allBin[i].beg,allBin[i].end,1.0*allBin[i].val/bin))
     fo.close()
+#    fo=open(outfile,'w')
+#    left=right=0
+#    num=len(allBin)
+#    print infile+"\t"+str(num)
+#    for i in range(num):
+#	while left<i:
+#	    if allBin[i].chr==allBin[left].chr and allBin[i].beg-allBin[left].beg<=bgWin:
+#	    	break
+#	    left+=1
+#	while right<num-1:
+#	    if allBin[right].end-allBin[i].end>bgWin or allBin[right].chr!=allBin[i].chr:
+#	    	break
+#	    right+=1
+#	if left==0:
+#	    sum=allSum[right-1]
+#	else:
+#	    sum=allSum[right-1]-allSum[left]
+#	if sum==0:
+#	    sum=1
+#	fo.write(('%s\t%d\t%d\t%f\n')%(allBin[i].chr,allBin[i].beg,allBin[i].end,2.0*allBin[i].val*bgWin/bin/sum))
+#	#fo.write(('%s\t%d\t%d\t%f\n')%(allBin[i].chr,allBin[i].beg,allBin[i].end,1.0*allBin[i].val/bin))
+#    fo.close()
+
+def refinePeak(peakfile, plustab, minustab):
+    fi=open(peakfile)
+    fiP=open(plustab)
+    fiM=open(minustab)
+    fo=open(prefix+'Peak.bed','w')
+    for peak in fi:
+    	peak=peak.strip()
+	if len(peak)<1:
+	    continue
+
 
 genSigFile(sys.argv[1],plusSig)
 genSigFile(sys.argv[2],minusSig)
+#cmd='sh mergePeak.sh '+plusSig+' '+minusSig+' '+prefix
+#os.system(cmd)
+#refinePeak(prefix+'.bed.temp','tempPlus.tab','tempMinus.tab')

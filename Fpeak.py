@@ -16,7 +16,7 @@ class ChrBin:
     	self.val=val
 
 prefix=sys.argv[3]
-bin=500
+bin=200
 bgWin=2000
 plusSig=prefix+'Plus.sig'
 minusSig=prefix+'Minus.sig'
@@ -32,6 +32,8 @@ def genSigFile(infile, outfile):
     nowChr='chr0'
     nowS=1
     nowE=100
+    smtP=0
+    smtSig=0
     sum=0
     bp=0
     csum=0
@@ -49,13 +51,22 @@ def genSigFile(infile, outfile):
 	    	allBin.append(ChrBin(nowChr, nowS, nowS+bin, sum))
 	    	csum+=sum
 	    	allSum.append(csum)
-	    	fo.write(('%s\t%d\t%d\t.\t%f\n')%(nowChr,nowS,nowS+bin,1.0*sum/bin))
+		if 'Plus' in outfile:
+		    nowE=nowS+bin
+		else:
+		    nowS=max(1,nowE-bin)
+	    	fo.write(('%s\t%d\t%d\t%d\t%f\n')%(nowChr,nowS,nowE,smtP,1.0*sum/bin))
 	    nowChr=chr
 	    nowS=start
 	    sum=0
+	    smtP=0
+	    smtSig=0
 	    bp=0
 	nowE=end
 	sum+=num*(end-start)
+	if num>smtSig:
+	    smtP=(start+end)/2
+	    smtSig=num
 	bp+=end-start
     fi.close()
     fo.close()

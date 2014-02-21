@@ -82,7 +82,8 @@ class HMM:
     # calculate __ln(x)
     def __ln(self, value):
         if (value == 0.0):
-            return self.NEG_INF
+            #return self.NEG_INF
+            return -1e8
         else:
             return math.log(value)
     
@@ -114,7 +115,7 @@ class HMM:
 
                 viterbi_table[t][st_j] = viterbi_t_j
                 bp_table[t - 1][st_j] = curr_best_st
-        
+
         # perform the viterbi back-trace
         t = len(bp_table) - 1
         if (t < 0):
@@ -123,7 +124,7 @@ class HMM:
         
         curr_state = 0
         for st in xrange(N):
-            if (bp_table[-1][st] > bp_table[-1][curr_state]):
+            if (viterbi_table[-1][st] > viterbi_table[-1][curr_state]):
                 curr_state = st
         
         for t in xrange(ob_seq_len - 1, -1, -1):
@@ -132,6 +133,9 @@ class HMM:
             states_seq[t] = self.st_list[curr_state]
             curr_state = bp_table[t][curr_state]
         
+	for i in viterbi_table:
+	    for j in i:
+	    	print math.exp(j)
         return states_seq
     
     # given the observation sequence, return its probability given the model
@@ -446,7 +450,11 @@ class HMM:
         N = len(self.st_list)        
         self.init_matrix = [ln_0 for st in xrange(N)]
         self.init_matrix_copy = [ln_0 for st in xrange(N)]
+    	num=1.0*sum([Pi_matrix[i] for i in Pi_matrix])
+	if num<1:
+	    num=1.0
         for st in Pi_matrix:
+            Pi_matrix[st]=self.__ln(Pi_matrix[st]/num)
             self.init_matrix[self.st_list_index[st]] = Pi_matrix[st]
             
     
@@ -468,7 +476,11 @@ class HMM:
         self.trans_matrix_copy = [[ln_0 for st_i in xrange(N)]  for st_j in xrange(N)]
         
         for st_i in A_matrix:
+            num=1.0*sum([A_matrix[st_i][i] for i in A_matrix[st_i]])
+	    if num<1:
+	    	num=1.0
             for st_j in A_matrix[st_i]:
+            	A_matrix[st_i][st_j]=self.__ln(A_matrix[st_i][st_j]/num)
                 self.trans_matrix[self.st_list_index[st_i]][self.st_list_index[st_j]] = A_matrix[st_i][st_j]
     
     # set the probability of emitting observation[ob] at state[st]
@@ -490,7 +502,11 @@ class HMM:
         self.emit_matrix_copy = [[ln_0 for st in xrange(ob_list_len)] for ob in xrange(N)]
         
         for st in B_matrix:
+            num=1.0*sum([B_matrix[st][i] for i in B_matrix[st]])
+	    if num<1:
+	    	num=1.0
             for ob in B_matrix[st]:
+            	B_matrix[st][ob]=self.__ln(B_matrix[st][ob]/num)
                 self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]] = B_matrix[st][ob]
     
     # get the list of states

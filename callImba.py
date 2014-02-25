@@ -77,20 +77,20 @@ def readData(obsLst, realLst, fileF, fileC):
     meanCons=np.mean(rowCons)
     stdCons=np.std(rowCons)
     for i in xrange(len(rowSig)):
-    	state=''
-	if rowSig[i]-meanSig>stdSig:
-	    state+='hf'
-	elif rowSig[i]-meanSig<-0.5*stdSig:
-	    state+='lf'
-	else:
-	    state+='mf'
-	if rowCons[i]-meanCons>stdCons:
-	    state+='hc'
-	elif rowCons[i]-meanCons<-0.5*stdCons:
-	    state+='lc'
-	else:
-	    state+='mc'
-	meanObs.append(state)
+        state=''
+        if rowSig[i]-meanSig>stdSig:
+            state+='hf'
+        elif rowSig[i]-meanSig<-0.5*stdSig:
+            state+='lf'
+        else:
+            state+='mf'
+        if rowCons[i]-meanCons>stdCons:
+            state+='hc'
+        elif rowCons[i]-meanCons<-0.5*stdCons:
+            state+='lc'
+        else:
+            state+='mc'
+        meanObs.append(state)
 
 def buildLeft():
     hmm_model = hmm_faster.HMM()
@@ -102,7 +102,11 @@ def buildLeft():
         'Drop':{'Peak': 0.5, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.1},
         'Active':{'Peak': 0.1, 'Drop': 0.3, 'Active': 0.3, 'Bg':0.1},
         'Bg':{'Peak': 0.2, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.7}}
-    E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0.4, 'mfmc': 0.4, 'mflc': 0.1,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
+#     E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0.4, 'mfmc': 0.4, 'mflc': 0.1,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
+#         'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.1, 'mfmc': 0.1, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
+#         'Active':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.3, 'mfmc': 0.5, 'mflc': 0.2,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
+#         'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 2, 'mflc': 3,'lfhc': 0, 'lfmc': 2, 'lflc': 3}}
+    E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0, 'mfmc': 0, 'mflc': 0,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
         'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.1, 'mfmc': 0.1, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
         'Active':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.3, 'mfmc': 0.5, 'mflc': 0.2,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
         'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 2, 'mflc': 3,'lfhc': 0, 'lfmc': 2, 'lflc': 3}}
@@ -216,7 +220,7 @@ def runHmm():
     beg=time.time()
     hmm_all.append(buildLeft())
     print 1
-    gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
+#     gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
     print 2
 #     hmm_all[0]=buildLeftGamma(gamma_parL)
     print 3
@@ -224,7 +228,7 @@ def runHmm():
     print 4
     hmm_all.append(buildRight())
     print 5
-    gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
+#     gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
     print 6
 #     hmm_all[2]=buildRightGamma(gamma_parR)
 #     gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
@@ -278,6 +282,7 @@ def runHmm():
             right+=1
         else:
             mid+=1
+#     print meanObs
 #     for i in xrange(len(hmm_all)):
 #         print hmm_all[i].viterbi(meanObs)
 #         print hmm_all[i].evaluate(meanObs)
@@ -294,5 +299,6 @@ def runHmm():
 
 readData(trainLObs, realL, sys.argv[1], sys.argv[2])
 readData(trainRObs, realR, sys.argv[3], sys.argv[4])
+meanObs=[]
 readData(allObs, realAll, sys.argv[5], sys.argv[6])
 runHmm()

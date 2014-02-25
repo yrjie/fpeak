@@ -13,10 +13,12 @@ E_matrix={
 	'Healthy' : {'normal': 0.5, 'cold': 0.4, 'dizzy': 0.1},
 	'Fever' : {'normal': 0.1, 'cold': 0.3, 'dizzy': 0.6},
 	}
+a=['normal', 'cold', 'dizzy']
 hmm_model.set_initial_matrix(Pi_matrix)
 hmm_model.set_transition_matrix(T_matrix)
 hmm_model.set_emission_matrix(E_matrix)
+a=['normal', 'cold', 'dizzy','normal', 'cold', 'dizzy','normal', 'cold', 'dizzy']
+hmm_model.train(a, max_iteration=1000, delta=0.001)
 print hmm_model.get_model()
-a=['normal', 'cold', 'dizzy']
 result=hmm_model.viterbi(a)
 print result

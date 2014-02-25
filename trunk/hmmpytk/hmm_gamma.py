@@ -12,11 +12,13 @@ import random
 import copy
 import pickle
 import scipy.stats as ss
+import bisect
 
 class HMMgamma:
     INF = float('inf')    # infinity !!!
     NEG_INF = float('-inf')
     M_LN2 = 0.69314718055994530942
+    size_E =1000
     
     # constructor supplies state list and observation list 
     def __init__(self, states = None, observations = None, init_matrix = None, trans_matrix = None, gamma_par = None):
@@ -26,7 +28,8 @@ class HMMgamma:
         self.ob_list_index = None   # given ob, get index 
         self.init_matrix = None
         self.trans_matrix = None
-        self.gamma_par = None
+        self.value_table=None
+        self.E_table=None
         self.num_var = None
         
         self.init_matrix_copy = None
@@ -53,7 +56,7 @@ class HMMgamma:
             self.set_transition_matrix(trans_matrix)
         
         if (gamma_par is not None):
-            self.set_gamma_par(gamma_par)
+            self.set_emission_table(gamma_par)
 
     # build the empty alpha, beta, xi, gamma tables according the the length
     # of given observation sequence
@@ -80,7 +83,7 @@ class HMMgamma:
 
     # calculate __ln(x)
     def __ln(self, value):
-        if (value == 0.0):
+        if (value <1e-8):
             #return self.NEG_INF
             return -1e8
         else:
@@ -520,12 +523,22 @@ class HMMgamma:
 #             for ob in B_matrix[st]:
 #             	B_matrix[st][ob]=self.__ln(B_matrix[st][ob]/num)
 #                 self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]] = B_matrix[st][ob]
-    def set_gamma_par(self, B_par):
-        self.gamma_par=[0]*len(self.st_list)
-        for st_i in B_par:
+    def set_emission_table(self, B_par):
+        self.value_table=[0]*len(self.st_list)
+        self.E_table=[0]*len(self.st_list)
+        for i in xrange(len(B_par)):
+            st_i=B_par.keys()[i]
             ind=self.st_list_index[st_i]
-            self.gamma_par[ind]=B_par[st_i]
-        self.num_var=len(self.gamma_par[0])
+            self.value_table[ind]=[]
+            self.E_table[ind]=[]
+            for j in xrange(len(B_par[st_i])):
+                a=B_par[st_i][j]
+                [left,right]=ss.gamma.interval(1-1.0/self.size_E,a[0],loc=a[1],scale=a[2])
+                x=[left+1.0*k*(right-left)/self.size_E for k in range(self.size_E+1)]
+                y=[ss.gamma.pdf(k, a[0],loc=a[1],scale=a[2]) for k in x]
+                self.value_table[ind].append(x)
+                self.E_table[ind].append(y)
+        self.num_var=len(self.E_table[0])
     
     # get the list of states
     def get_states(self):
@@ -555,7 +568,12 @@ class HMMgamma:
     def get_emission(self, st_ind, ob):
         ret=0
         for i in xrange(self.num_var):
-            ret+=self.__ln(ss.gamma.pdf(ob[i], self.gamma_par[st_ind][i][0],loc=self.gamma_par[st_ind][i][1],scale=self.gamma_par[st_ind][i][2])) 
+            pos=bisect.bisect_left(self.value_table[st_ind][i],ob[i],lo=0,hi=self.size_E)
+            if pos==0 or pos>=self.size_E:
+                now=self.E_table[st_ind][i][pos]/10
+            else:
+                now=self.E_table[st_ind][i][pos]
+            ret+=self.__ln(now) 
         return ret
     
     # get a list of random numbers

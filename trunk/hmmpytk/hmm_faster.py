@@ -232,12 +232,12 @@ class HMM:
     	t=len(ob_seq)
     	ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
     	self.forward(ob_seq_int)
-	ret=self.NEG_INF
-	for st in xrange(N):
-	    #print math.exp(ret)+math.exp(self.alpha_table[t][st])
-	    ret=self.__log_add(ret, self.alpha_table[t][st])
-	    #print math.exp(ret)
-	return math.exp(ret)
+        ret=self.NEG_INF
+        for st in xrange(N):
+            #print math.exp(ret)+math.exp(self.alpha_table[t][st])
+            ret=self.__log_add(ret, self.alpha_table[t][st])
+            #print math.exp(ret)
+    	return math.exp(ret)
     	
 
     # train the HMM using forward-backward algorithm, stops when the differences 

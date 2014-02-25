@@ -92,16 +92,6 @@ def readData(obsLst, realLst, fileF, fileC):
 	    state+='mc'
 	meanObs.append(state)
 
-def initMat(Pi, E, T):
-    for x in Pi:
-    	Pi[x]=0
-    for x in E:
-	for y in E[x]:
-	    E[x][y]=0
-    for x in T:
-	for y in T[x]:
-	    T[x][y]=0
-
 def buildLeft():
     hmm_model = hmm_faster.HMM()
     hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
@@ -121,21 +111,6 @@ def buildLeft():
     hmm_model.set_emission_matrix(E_matrix)
     #print hmm_model.get_initial_matrix()
     hmm_model.train(sum(trainLObs,[]), max_iteration=1000, delta=0.001)
-    return hmm_model
-
-def buildLeftGamma(gamma_par):
-    hmm_model = hmm_gamma.HMMgamma()
-    hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
-    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
-    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.4},
-        'Drop':{'Peak': 0.5, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.1},
-        'Active':{'Peak': 0.1, 'Drop': 0.3, 'Active': 0.3, 'Bg':0.1},
-        'Bg':{'Peak': 0.2, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.7}}
-    hmm_model.set_initial_matrix(Pi_matrix)
-    hmm_model.set_transition_matrix(T_matrix)
-    hmm_model.set_gamma_par(gamma_par)
-    #print hmm_model.get_initial_matrix()
-    hmm_model.train(sum(realL,[]), max_iteration=10, delta=0.001)
     return hmm_model
 
 def buildMid():
@@ -179,6 +154,35 @@ def buildRight():
     hmm_model.train(sum(trainRObs, []), max_iteration=1000, delta=0.001)
     return hmm_model
 
+def buildLeftGamma(gamma_par):
+    hmm_model = hmm_gamma.HMMgamma()
+    hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
+    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
+    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.4},
+        'Drop':{'Peak': 0.5, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.1},
+        'Active':{'Peak': 0.1, 'Drop': 0.3, 'Active': 0.3, 'Bg':0.1},
+        'Bg':{'Peak': 0.2, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.7}}
+    hmm_model.set_initial_matrix(Pi_matrix)
+    hmm_model.set_transition_matrix(T_matrix)
+    hmm_model.set_emission_table(gamma_par)
+#     hmm_model.train(sum(realL,[]), max_iteration=10, delta=0.001)
+    return hmm_model
+
+def buildRightGamma(gamma_par):
+    hmm_model = hmm_gamma.HMMgamma()
+    hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
+    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
+    T_matrix={'Peak':{'Peak': 0.6, 'Drop': 0.5, 'Active': 0.1, 'Bg':0.1},
+        'Drop':{'Peak': 0.1, 'Drop': 0.2, 'Active': 0.5, 'Bg':0.1},
+        'Active':{'Peak': 0.1, 'Drop': 0.1, 'Active': 0.6, 'Bg':0.1},
+        'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.7}}
+    hmm_model.set_initial_matrix(Pi_matrix)
+    hmm_model.set_transition_matrix(T_matrix)
+    hmm_model.set_emission_table(gamma_par)
+    #print hmm_model.get_initial_matrix()
+#     hmm_model.train(sum(realR,[]), max_iteration=10, delta=0.001)
+    return hmm_model
+
 def getDistrByState(realLst, obsLst, hmm_model):
     states=['Active','Bg','Drop','Peak']
     realSig=[]
@@ -214,12 +218,15 @@ def runHmm():
     print 1
     gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
     print 2
-    hmm_all[0]=buildLeftGamma(gamma_parL)
+#     hmm_all[0]=buildLeftGamma(gamma_parL)
     print 3
     hmm_all.append(buildMid())
     print 4
     hmm_all.append(buildRight())
-    print 4
+    print 5
+    gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
+    print 6
+#     hmm_all[2]=buildRightGamma(gamma_parR)
 #     gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
     trainTS=time.time()
     print 'trainTS: '+str(trainTS-beg)
@@ -228,7 +235,8 @@ def runHmm():
     mid=0
     ind=[0 for i in xrange(len(realAll))]
     for k in xrange(len(realAll)):
-        x=realAll[k]
+#         x=realAll[k]
+        x=allObs[k]
         ma=0
         ind[k]=0
 # 	result=hmm_model.viterbi(x)
@@ -247,6 +255,7 @@ def runHmm():
 # 		    T_matrix[st][y]+=1
         pr0=hmm_all[0].evaluate(x)
         pr2=hmm_all[2].evaluate(x)
+#         print str(pr0)+"\t"+str(pr2)
         if pr0>2*pr2:
             ind[k]=0
         elif pr2>2*pr0:

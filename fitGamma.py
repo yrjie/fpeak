@@ -22,7 +22,7 @@ fit_alpha,fit_loc,fit_beta=ss.gamma.fit(data)
 #print ss.cauchy.pdf(2.9, loc=fit_loc,scale=fit_scale)
 #print ss.gamma.pdf(2.9, a[0],loc=a[1],scale=a[2])
 beg=time.time()
-[left,right]=ss.gamma.interval(0.9,a[0],loc=a[1],scale=a[2])
+[left,right]=ss.gamma.interval(0.999,a[0],loc=a[1],scale=a[2])
 print left,right
 x=[left+i*(right-left)/1000.0 for i in range(1001)]
 y=[ss.gamma.pdf(i, a[0],loc=a[1],scale=a[2]) for i in x]
@@ -30,7 +30,7 @@ ind=[bisect.bisect_left(x,i,lo=0,hi=len(x)-1) for i in data]
 res1=[y[i] for i in ind]
 #res2=[ss.gamma.pdf(i, a[0],loc=a[1],scale=a[2]) for i in data]
 res2=[ss.gamma.pdf(i, a[0],loc=a[1],scale=a[2]) for i in x]
-print res2
+print sum(res2)*(right-left)
 #res=sp.mean([abs(math.log(res1[i])-math.log(res2[i])) for i in range(len(res1))])
 res=sp.mean([abs(res1[i]-res2[i]) for i in range(len(res1))])
 print res

@@ -1,37 +1,36 @@
-# hmmpytk/hmm_faster.py - HMM (Hidden Markov Model) implementation written in Python 
-# Yuchen Zhang (yuchenz@cs.cmu.edu)
-# Version history:
-# 
-# Dec 31, 2012, 0.2.0 - Big improvements in speed
-# Dec 28, 2012, 0.1.1 - Added support for training on multiple instances
-# Dec 27, 2012, 0.1.0 - initial version
-# 
-# You may distribute this software freely. 
-# 
+#
+# author Yang Ruijie (yrjie0@gmail.com)
+# modified from hmmpytk
+#
+# gamma_par[i][j][k]: state i, variable j, k=0 alpha,1 loc,2 beta
+# obs_seq[i][j]: the ith obs, the jth variable
+
+
 import sys
 import math
 import random
 import copy
 import pickle
+import scipy.stats as ss
 
-class HMM:
+class HMMgamma:
     INF = float('inf')    # infinity !!!
     NEG_INF = float('-inf')
     M_LN2 = 0.69314718055994530942
     
     # constructor supplies state list and observation list 
-    def __init__(self, states = None, observations = None, init_matrix = None, trans_matrix = None, emit_matrix = None):
+    def __init__(self, states = None, observations = None, init_matrix = None, trans_matrix = None, gamma_par = None):
         self.st_list = None         # given index, get st
         self.st_list_index = None   # given st, get index
         self.ob_list = None         # given index, get ob
         self.ob_list_index = None   # given ob, get index 
         self.init_matrix = None
         self.trans_matrix = None
-        self.emit_matrix = None
+        self.gamma_par = None
+        self.num_var = None
         
         self.init_matrix_copy = None
         self.trans_matrix_copy = None
-        self.emit_matrix_copy = None
         
         self.alpha_table = None
         self.beta_table = None
@@ -53,8 +52,8 @@ class HMM:
         if (trans_matrix is not None):
             self.set_transition_matrix(trans_matrix)
         
-        if (emit_matrix is not None):
-            self.set_emission_matrix(emit_matrix)
+        if (gamma_par is not None):
+            self.set_gamma_par(gamma_par)
 
     # build the empty alpha, beta, xi, gamma tables according the the length
     # of given observation sequence
@@ -94,20 +93,20 @@ class HMM:
         
         viterbi_table = [[self.NEG_INF for st in xrange(N)] for t in xrange(ob_seq_len + 1)]
         bp_table = [[self.NEG_INF for st in xrange(N)] for t in xrange(ob_seq_len)]
-        ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
+#         ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
 
         # initialize viterbi table's first entry
         for i in xrange(N):
             viterbi_table[0][i] = self.init_matrix[i]
         
         for t in xrange(1, ob_seq_len + 1): # loop through time
-            ot = ob_seq_int[t - 1]
+            ot = ob_seq[t - 1]
             for st_j in xrange(N): # for each state
                 viterbi_t_j = self.NEG_INF
                 curr_best_st = None
                 
                 for st_i in xrange(N):
-                    log_sum = viterbi_table[t - 1][st_i] + self.trans_matrix[st_i][st_j] + self.emit_matrix[st_j][ot]
+                    log_sum = viterbi_table[t - 1][st_i] + self.trans_matrix[st_i][st_j] + get_emission(st_j, ot)
 
                     if (log_sum > viterbi_t_j):
                         viterbi_t_j = log_sum
@@ -139,12 +138,12 @@ class HMM:
         return states_seq
     
     # given the observation sequence, return its probability given the model
-    def forward(self, ob_seq_int):
+    def forward(self, ob_seq):
         if (self.verbose_mode):
             sys.stderr.write("\nComputing Alpha table ... \n")
             
         N = len(self.st_list)
-        ob_seq_len = len(ob_seq_int)
+        ob_seq_len = len(ob_seq)
         
         # build the alpha table in advance if not compatible
         if (self.alpha_table is None or len(self.alpha_table) != (ob_seq_len + 1)  
@@ -156,23 +155,23 @@ class HMM:
 
         for t in xrange(1, ob_seq_len + 1): # loop through time
             if (self.verbose_mode):
-                sys.stderr.write("\rComputing alpha table t = %d out of %d"%(t, len(ob_seq_int)))  
+                sys.stderr.write("\rComputing alpha table t = %d out of %d"%(t, len(ob_seq)))  
                           
-            ot = ob_seq_int[t - 1]
+            ot = ob_seq[t - 1]
             for st_j in xrange(N):
                 alpha_t_j = self.NEG_INF
                 for st_i in xrange(N):
-                    log_sum = self.alpha_table[t - 1][st_i] + self.trans_matrix[st_i][st_j] + self.emit_matrix[st_j][ot]
+                    log_sum = self.alpha_table[t - 1][st_i] + self.trans_matrix[st_i][st_j] + self.get_emission(st_j,ot)
                     alpha_t_j = self.__log_add(alpha_t_j, log_sum)
                 self.alpha_table[t][st_j] = alpha_t_j
     
     # backward algorithm
-    def backward(self, ob_seq_int):
+    def backward(self, ob_seq):
         if (self.verbose_mode):
             sys.stderr.write("\nComputing Beta table ... \n")
             
         N = len(self.st_list)
-        ob_seq_len = len(ob_seq_int)
+        ob_seq_len = len(ob_seq)
         
         # build the beta table in advance if not compatible
         if (self.beta_table is None or len(self.beta_table) != (ob_seq_len + 1) 
@@ -192,13 +191,13 @@ class HMM:
         # starting from 2nd to last and move backwards
         for t in xrange(ob_seq_len - 1, -1, -1):
             if (self.verbose_mode):
-                sys.stderr.write("\rComputing beta table t = %d out of %d"%(t, len(ob_seq_int)))
+                sys.stderr.write("\rComputing beta table t = %d out of %d"%(t, len(ob_seq)))
                             
-            ot_next = ob_seq_int[t]
+            ot_next = ob_seq[t]
             for st_i in xrange(N):
                 beta_t_i = self.NEG_INF
                 for st_j in xrange(N):
-                    log_sum = self.trans_matrix[st_i][st_j] + self.emit_matrix[st_j][ot_next] + self.beta_table[t + 1][st_j]
+                    log_sum = self.trans_matrix[st_i][st_j] + self.get_emission(st_j,ot_next) + self.beta_table[t + 1][st_j]
                     beta_t_i = self.__log_add(beta_t_i, log_sum)
                     # j += 1
     
@@ -208,13 +207,13 @@ class HMM:
     def __Xi(self, st_i, st_j, t, ob_seq_int):
         ot_next = ob_seq_int[t + 1]
         
-        numerator = self.alpha_table[t + 1][st_i] + self.trans_matrix[st_i][st_j] + self.emit_matrix[st_j][ot_next] + self.beta_table[t + 1][st_j]
+        numerator = self.alpha_table[t + 1][st_i] + self.trans_matrix[st_i][st_j] + self.get_emission(st_j, ot_next) + self.beta_table[t + 1][st_j]
         denominator = self.__ln(0.0)
         
         N = len(self.st_list)
         for st_from in xrange(N):
             for st_to in xrange(N):
-                denominator = self.__log_add(denominator, self.alpha_table[t + 1][st_from] + self.trans_matrix[st_from][st_to] + self.emit_matrix[st_to][ot_next] + self.beta_table[t + 1][st_to])
+                denominator = self.__log_add(denominator, self.alpha_table[t + 1][st_from] + self.trans_matrix[st_from][st_to] + self.get_emission(st_to, ot_next) + self.beta_table[t + 1][st_to])
 
         return (numerator - denominator) 
 
@@ -230,14 +229,14 @@ class HMM:
     def evaluate(self, ob_seq):
     	N = len(self.st_list)
     	t=len(ob_seq)
-    	ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
-    	self.forward(ob_seq_int)
-	ret=self.NEG_INF
-	for st in xrange(N):
-	    #print math.exp(ret)+math.exp(self.alpha_table[t][st])
-	    ret=self.__log_add(ret, self.alpha_table[t][st])
-	    #print math.exp(ret)
-	return math.exp(ret)
+#     	ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
+    	self.forward(ob_seq)
+        ret=self.NEG_INF
+        for st in xrange(N):
+            #print math.exp(ret)+math.exp(self.alpha_table[t][st])
+            ret=self.__log_add(ret, self.alpha_table[t][st])
+            #print math.exp(ret)
+        return math.exp(ret)
     	
 
     # train the HMM using forward-backward algorithm, stops when the differences 
@@ -248,18 +247,18 @@ class HMM:
 
         iteration = 0
         prev_avg_ll = self.NEG_INF
-        ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
+#         ob_seq_int = [self.ob_list_index[ob] for ob in ob_seq]
         ob_seq_len = len(ob_seq)
         
         # build all the matrices
         self.__build_internal_tables(ob_seq_len)
         
         while (iteration < max_iteration):
-            self.forward(ob_seq_int)
-            self.backward(ob_seq_int)
+            self.forward(ob_seq)
+            self.backward(ob_seq)
             avg_ll = self.__get_avgll_by_alpha(len(ob_seq))
             
-            self.forward_backward(ob_seq_int)
+            self.forward_backward(ob_seq)
             
             # swap the matrices
             self.init_matrix, self.init_matrix_copy = self.init_matrix_copy, self.init_matrix
@@ -282,9 +281,9 @@ class HMM:
         return True
 
     # forward_backword algorithm for training
-    def forward_backward(self, ob_seq_int):
+    def forward_backward(self, ob_seq):
         N = len(self.st_list)
-        ob_seq_len = len(ob_seq_int)
+        ob_seq_len = len(ob_seq)
 
         if (self.verbose_mode):
             sys.stderr.write("\nCompute Xi and Gamma table ... \n")
@@ -295,15 +294,15 @@ class HMM:
                 
             # compute the denominator for Xi at time t
             Xi_t_denominator = self.__ln(0.0)
-            ot_next = ob_seq_int[t + 1]
+            ot_next = ob_seq[t + 1]
             for st_from in xrange(N):
                 for st_to in xrange(N):
-                    Xi_t_denominator = self.__log_add(Xi_t_denominator, self.alpha_table[t + 1][st_from] + self.trans_matrix[st_from][st_to] + self.emit_matrix[st_to][ot_next] + self.beta_table[t + 1][st_to])
+                    Xi_t_denominator = self.__log_add(Xi_t_denominator, self.alpha_table[t + 1][st_from] + self.trans_matrix[st_from][st_to] + self.get_emission(st_to, ot_next) + self.beta_table[t + 1][st_to])
                     
             for st_i in xrange(N):
                 gamma_t_i = self.__ln(0.0)
                 for st_j in xrange(N):
-                    Xi_t_numerator = self.alpha_table[t + 1][st_i] + self.trans_matrix[st_i][st_j] + self.emit_matrix[st_j][ot_next] + self.beta_table[t + 1][st_j]
+                    Xi_t_numerator = self.alpha_table[t + 1][st_i] + self.trans_matrix[st_i][st_j] + self.get_emission(st_j, ot_next) + self.beta_table[t + 1][st_j]
                     Xi_t_i_j = (Xi_t_numerator - Xi_t_denominator)
                     
                     self.xi_table[t][st_i][st_j] = Xi_t_i_j
@@ -338,22 +337,22 @@ class HMM:
         if (self.verbose_mode):
             sys.stderr.write("\nComputing new values for emit_matrix ... \n")
             
-        emit_numerators_list = [self.NEG_INF for vk in xrange(len(self.ob_list))] 
-        for st_j in xrange(N):
-            if (self.verbose_mode):
-                sys.stderr.write("State %d of %d ... \r"%(st_j, N))
-                
-            emit_denominator = self.NEG_INF
-            for vk in xrange(len(self.ob_list)):
-                emit_numerators_list[vk] = self.NEG_INF
-                
-            for t in xrange(ob_seq_len - 1):
-                emit_denominator = self.__log_add(emit_denominator, self.gamma_table[t][st_j])
-                curr_emit_numerator = emit_numerators_list[ob_seq_int[t]]
-                emit_numerators_list[ob_seq_int[t]] = self.__log_add(curr_emit_numerator, self.gamma_table[t][st_j])
-            
-            for vk in xrange(len(self.ob_list)):
-                self.emit_matrix_copy[st_j][vk] = (emit_numerators_list[vk] - emit_denominator)
+#         emit_numerators_list = [self.NEG_INF for vk in xrange(len(self.ob_list))] 
+#         for st_j in xrange(N):
+#             if (self.verbose_mode):
+#                 sys.stderr.write("State %d of %d ... \r"%(st_j, N))
+#                 
+#             emit_denominator = self.NEG_INF
+#             for vk in xrange(len(self.ob_list)):
+#                 emit_numerators_list[vk] = self.NEG_INF
+#                 
+#             for t in xrange(ob_seq_len - 1):
+#                 emit_denominator = self.__log_add(emit_denominator, self.gamma_table[t][st_j])
+#                 curr_emit_numerator = emit_numerators_list[ob_seq_int[t]]
+#                 emit_numerators_list[ob_seq_int[t]] = self.__log_add(curr_emit_numerator, self.gamma_table[t][st_j])
+#             
+#             for vk in xrange(len(self.ob_list)):
+#                 self.emit_matrix_copy[st_j][vk] = (emit_numerators_list[vk] - emit_denominator)
     
     # computes the new trans[st_i][st_j] based on the __Xi table and gamma table
     def __trans_prime(self, st_i, st_j, ob_seq_int):
@@ -391,8 +390,8 @@ class HMM:
         self.init_matrix_copy.append(self.NEG_INF)
         self.trans_matrix.append([self.NEG_INF for x in xrange(N)])
         self.trans_matrix_copy.append([self.NEG_INF for x in xrange(N)])
-        self.emit_matrix.append([self.NEG_INF for x in xrange(ob_list_len)])
-        self.emit_matrix_copy.append([self.NEG_INF for x in xrange(ob_list_len)])
+#         self.emit_matrix.append([self.NEG_INF for x in xrange(ob_list_len)])
+#         self.emit_matrix_copy.append([self.NEG_INF for x in xrange(ob_list_len)])
     
     # remove a state from HMM
     def remove_state(self, st):
@@ -410,8 +409,8 @@ class HMM:
         for item in self.init_matrix_copy:
             del item[st_idx]
         
-        del self.emit_matrix[st_idx]
-        del self.emit_matrix_copy[st_idx]
+#         del self.emit_matrix[st_idx]
+#         del self.emit_matrix_copy[st_idx]
         
     
     # add an observation to HMM
@@ -420,9 +419,9 @@ class HMM:
         self.ob_list_index[ob] = len(self.ob_list) - 1
 
         N = len(self.st_list)
-        for st in xrange(N):
-            self.emit_matrix[st].append(self.NEG_INF)
-            self.emit_matrix_copy[st].append(self.NEG_INF)            
+#         for st in xrange(N):
+#             self.emit_matrix[st].append(self.NEG_INF)
+#             self.emit_matrix_copy[st].append(self.NEG_INF)            
     
     # remove an observation from HMM
     def remove_observation(self, ob):
@@ -431,9 +430,9 @@ class HMM:
         del self.ob_list_index[ob]
         
         N = len(self.st_list)
-        for st in xrange(N):
-            del self.emit_matrix[st][ob_idx]
-            del self.emit_matrix_copy[st][ob_idx]
+#         for st in xrange(N):
+#             del self.emit_matrix[st][ob_idx]
+#             del self.emit_matrix_copy[st][ob_idx]
     
     # set the list of states
     def set_states(self, st_seq):
@@ -497,30 +496,36 @@ class HMM:
                 self.trans_matrix[self.st_list_index[st_i]][self.st_list_index[st_j]] = A_matrix[st_i][st_j]
     
     # set the probability of emitting observation[ob] at state[st]
-    def set_emission(self, st, ob, prob):
-        if (st not in self.st_list_index):
-            self.add_state(st)
-        
-        if (ob not in self.ob_list_index):
-            self.add_observation(ob)
-
-        self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]] = prob
+#     def set_emission(self, st, ob, prob):
+#         if (st not in self.st_list_index):
+#             self.add_state(st)
+#         
+#         if (ob not in self.ob_list_index):
+#             self.add_observation(ob)
+# 
+#         self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]] = prob
     
     # set the emission probability matrix
-    def set_emission_matrix(self, B_matrix):
-        N = len(self.st_list)
-        ob_list_len = len(self.ob_list)
-        ln_0 = self.__ln(0.0)
-        self.emit_matrix = [[ln_0 for st in xrange(ob_list_len)] for ob in xrange(N)]
-        self.emit_matrix_copy = [[ln_0 for st in xrange(ob_list_len)] for ob in xrange(N)]
-        
-        for st in B_matrix:
-            num=1.0*sum([B_matrix[st][i] for i in B_matrix[st]])
-	    if num<1:
-	    	num=1.0
-            for ob in B_matrix[st]:
-            	B_matrix[st][ob]=self.__ln(B_matrix[st][ob]/num)
-                self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]] = B_matrix[st][ob]
+#     def set_emission_matrix(self, B_matrix):
+#         N = len(self.st_list)
+#         ob_list_len = len(self.ob_list)
+#         ln_0 = self.__ln(0.0)
+#         self.emit_matrix = [[ln_0 for st in xrange(ob_list_len)] for ob in xrange(N)]
+#         self.emit_matrix_copy = [[ln_0 for st in xrange(ob_list_len)] for ob in xrange(N)]
+#         
+#         for st in B_matrix:
+#             num=1.0*sum([B_matrix[st][i] for i in B_matrix[st]])
+# 	    if num<1:
+# 	    	num=1.0
+#             for ob in B_matrix[st]:
+#             	B_matrix[st][ob]=self.__ln(B_matrix[st][ob]/num)
+#                 self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]] = B_matrix[st][ob]
+    def set_gamma_par(self, B_par):
+        self.gamma_par=[0]*len(self.st_list)
+        for st_i in B_par:
+            ind=self.st_list_index[st_i]
+            self.gamma_par[ind]=B_par[st_i]
+        self.num_var=len(self.gamma_par[0])
     
     # get the list of states
     def get_states(self):
@@ -546,13 +551,12 @@ class HMM:
     def get_transition(self, st_from, st_to):
         return self.trans_matrix[self.st_list_index[st_from]][self.st_list_index[st_to]]
     
-    # returns the emission matrix
-    def get_emission_matrix(self):
-        return self.emit_matrix
-    
     # returns the probability of emiting observation[ob] at state[st]
-    def get_emission(self, st, ob):
-        return self.emit_matrix[self.st_list_index[st]][self.ob_list_index[ob]]
+    def get_emission(self, st_ind, ob):
+        ret=0
+        for i in xrange(self.num_var):
+            ret+=self.__ln(ss.gamma.pdf(ob[i], self.gamma_par[st_ind][i][0],loc=self.gamma_par[st_ind][i][1],scale=self.gamma_par[st_ind][i][2])) 
+        return ret
     
     # get a list of random numbers
     def __get_rand_list(self, list_len, sum_to_one = True, take_ln = True):
@@ -585,8 +589,8 @@ class HMM:
         self.init_matrix_copy = [0.0 for st in xrange(N)]
         self.trans_matrix = [[0.0 for st_i in xrange(N)] for st_j in xrange(N)]
         self.trans_matrix_copy = [[0.0 for st_i in xrange(N)] for st_j in xrange(N)]
-        self.emit_matrix = [[0.0 for st in xrange(ob_list_len)] for ob in xrange(N)]
-        self.emit_matrix_copy = [[0.0 for st in xrange(ob_list_len)] for ob in xrange(N)]
+#         self.emit_matrix = [[0.0 for st in xrange(ob_list_len)] for ob in xrange(N)]
+#         self.emit_matrix_copy = [[0.0 for st in xrange(ob_list_len)] for ob in xrange(N)]
         
         # initial matrix
         rand_list = self.__get_rand_list(N)
@@ -604,9 +608,9 @@ class HMM:
         # emission matrix
         for st in xrange(N):
             rand_list = self.__get_rand_list(ob_list_len)
-            for ob in xrange(ob_list_len):
-                self.emit_matrix[st][ob] = rand_list[ob]
-                self.emit_matrix_copy[st][ob] = rand_list[ob]
+#             for ob in xrange(ob_list_len):
+#                 self.emit_matrix[st][ob] = rand_list[ob]
+#                 self.emit_matrix_copy[st][ob] = rand_list[ob]
     
     # load a previously saved model from file
     def read_from_file(self, model_filename):
@@ -624,7 +628,7 @@ class HMM:
     def get_model(self):
         init_matrix_dict = dict()
         trans_matrix_dict = dict()
-        emit_matrix_dict = dict()
+#         emit_matrix_dict = dict()
         
         for st in xrange(len(self.st_list)):
             init_matrix_dict[self.st_list[st]] = self.init_matrix[st]
@@ -634,12 +638,12 @@ class HMM:
             for st_j in xrange(len(self.st_list)):
                 trans_matrix_dict[self.st_list[st_i]][self.st_list[st_j]] = self.trans_matrix[st_i][st_j]
         
-        for st in xrange(len(self.st_list)):
-            emit_matrix_dict[self.st_list[st]] = dict()
-            for ob in xrange(len(self.ob_list)):
-                emit_matrix_dict[self.st_list[st]][self.ob_list[ob]] = self.emit_matrix[st][ob]
+#         for st in xrange(len(self.st_list)):
+#             emit_matrix_dict[self.st_list[st]] = dict()
+#             for ob in xrange(len(self.ob_list)):
+#                 emit_matrix_dict[self.st_list[st]][self.ob_list[ob]] = self.emit_matrix[st][ob]
         
-        return (self.st_list, self.ob_list, init_matrix_dict, trans_matrix_dict, emit_matrix_dict)
+        return (self.st_list, self.ob_list, init_matrix_dict, trans_matrix_dict) # no emission info now
         
     # save the HMM (init, trans, emit) matrices to file
     def write_to_file(self, model_filename):

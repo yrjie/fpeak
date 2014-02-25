@@ -534,6 +534,7 @@ class HMMgamma:
             for j in xrange(len(B_par[st_i])):
                 a=B_par[st_i][j]
                 [left,right]=ss.gamma.interval(1-1.0/self.size_E,a[0],loc=a[1],scale=a[2])
+                print st_i,j,left,right
                 x=[left+1.0*k*(right-left)/self.size_E for k in range(self.size_E+1)]
                 y=[ss.gamma.pdf(k, a[0],loc=a[1],scale=a[2]) for k in x]
                 self.value_table[ind].append(x)

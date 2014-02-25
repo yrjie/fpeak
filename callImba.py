@@ -47,11 +47,11 @@ def readData(obsLst, realLst, fileF, fileC):
             rowSig=[0]*len(tempSig)
             rowCons=[0]*len(tempCons)
         for i in xrange(len(tempSig)):
-            real.append([tempSig[i], tempCons[i]])
-#             try:
-#                 real.append(RealBinObs((tempSig[i]-meanSig)/stdSig, (tempCons[i]-meanCons)/stdCons))
-#             except:
-#                 real.append(RealBinObs(0, 0))
+#             real.append([tempSig[i], tempCons[i]])
+            try:
+                real.append([(tempSig[i]-meanSig)/stdSig, tempCons[i]])
+            except:
+                real.append([0, 0])
             state=''
             if tempSig[i]-meanSig>stdSig:
                 state+='hf'
@@ -169,7 +169,7 @@ def buildLeftGamma(gamma_par):
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
-#     hmm_model.train(sum(realL,[]), max_iteration=10, delta=0.001)
+    hmm_model.train(sum(realL,[]), max_iteration=10, delta=0.001)
     return hmm_model
 
 def buildRightGamma(gamma_par):
@@ -184,7 +184,7 @@ def buildRightGamma(gamma_par):
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
     #print hmm_model.get_initial_matrix()
-#     hmm_model.train(sum(realR,[]), max_iteration=10, delta=0.001)
+    hmm_model.train(sum(realR,[]), max_iteration=10, delta=0.001)
     return hmm_model
 
 def getDistrByState(realLst, obsLst, hmm_model):
@@ -220,18 +220,17 @@ def runHmm():
     beg=time.time()
     hmm_all.append(buildLeft())
     print 1
-#     gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
+    gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
     print 2
-#     hmm_all[0]=buildLeftGamma(gamma_parL)
+    hmm_all[0]=buildLeftGamma(gamma_parL)
     print 3
     hmm_all.append(buildMid())
     print 4
     hmm_all.append(buildRight())
     print 5
-#     gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
+    gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
     print 6
-#     hmm_all[2]=buildRightGamma(gamma_parR)
-#     gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
+    hmm_all[2]=buildRightGamma(gamma_parR)
     trainTS=time.time()
     print 'trainTS: '+str(trainTS-beg)
     left=0
@@ -239,8 +238,8 @@ def runHmm():
     mid=0
     ind=[0 for i in xrange(len(realAll))]
     for k in xrange(len(realAll)):
-#         x=realAll[k]
-        x=allObs[k]
+        x=realAll[k]
+#         x=allObs[k]
         ma=0
         ind[k]=0
 # 	result=hmm_model.viterbi(x)

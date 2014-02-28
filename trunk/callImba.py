@@ -4,6 +4,7 @@ import time
 import scipy.stats as ss
 from hmmpytk import hmm_faster
 from hmmpytk import hmm_gamma
+import math
 
 if len(sys.argv)<7:
     print 'Usage: python callImba.py FaireSig conservation testFaire testCons'
@@ -23,6 +24,7 @@ trainLObs=[]
 trainRObs=[]
 allObs=[]
 meanObs=[]
+thres=2
 
 def readData(obsLst, realLst, fileF, fileC):
     rowSig=[]
@@ -48,9 +50,9 @@ def readData(obsLst, realLst, fileF, fileC):
             rowCons=[0]*len(tempCons)
         for i in xrange(len(tempSig)):
 #             real.append([tempSig[i], tempCons[i]])
-            try:
-                real.append([(tempSig[i]-meanSig)/stdSig, tempCons[i]])
-            except:
+            if abs(stdSig)>1e-8:
+                real.append([(tempSig[i]-meanSig)/stdSig+0.1, tempCons[i]])
+            else:
                 real.append([0, 0])
             state=''
             if tempSig[i]-meanSig>stdSig:
@@ -91,6 +93,7 @@ def readData(obsLst, realLst, fileF, fileC):
         else:
             state+='mc'
         meanObs.append(state)
+#     print len(realLst)
 
 def buildLeft():
     hmm_model = hmm_faster.HMM()
@@ -113,8 +116,12 @@ def buildLeft():
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_matrix(E_matrix)
-    #print hmm_model.get_initial_matrix()
     hmm_model.train(sum(trainLObs,[]), max_iteration=1000, delta=0.001)
+    print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
+    print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
+    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
+    print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
 def buildMid():
@@ -156,6 +163,11 @@ def buildRight():
     hmm_model.set_emission_matrix(E_matrix)
     #print hmm_model.get_initial_matrix()
     hmm_model.train(sum(trainRObs, []), max_iteration=1000, delta=0.001)
+    print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
+    print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
+    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
+    print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
 def buildLeftGamma(gamma_par):
@@ -169,14 +181,19 @@ def buildLeftGamma(gamma_par):
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
-    hmm_model.train(sum(realL,[]), max_iteration=10, delta=0.001)
+    hmm_model.train(sum(realL,[]), max_iteration=100, delta=0.001)
+    print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
+    print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
+    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
+    print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
 def buildRightGamma(gamma_par):
     hmm_model = hmm_gamma.HMMgamma()
     hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
     Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
-    T_matrix={'Peak':{'Peak': 0.6, 'Drop': 0.5, 'Active': 0.1, 'Bg':0.1},
+    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.5, 'Active': 0.1, 'Bg':0},
         'Drop':{'Peak': 0.1, 'Drop': 0.2, 'Active': 0.5, 'Bg':0.1},
         'Active':{'Peak': 0.1, 'Drop': 0.1, 'Active': 0.6, 'Bg':0.1},
         'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.7}}
@@ -184,7 +201,12 @@ def buildRightGamma(gamma_par):
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
     #print hmm_model.get_initial_matrix()
-    hmm_model.train(sum(realR,[]), max_iteration=10, delta=0.001)
+    hmm_model.train(sum(realR,[]), max_iteration=100, delta=0.001)
+    print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
+    print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
+    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
+    print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
 def getDistrByState(realLst, obsLst, hmm_model):
@@ -192,12 +214,16 @@ def getDistrByState(realLst, obsLst, hmm_model):
     realSig=[]
     realCons=[]
     gamma_par={}
+    fosig=[]
+    focons=[]
 #     result=hmm_model.viterbi(meanObs)
 #     print meanObs
 #     print result
     for st in states:
         realSig.append([])
-        realCons.append([])
+        realCons.append([]) 
+#         fosig.append(open('fitting/'+st+'.sig','w'))
+#         focons.append(open('fitting/'+st+'.cons','w'))
     for i in xrange(len(obsLst)):
         x=obsLst[i]
         result=hmm_model.viterbi(x)
@@ -205,14 +231,19 @@ def getDistrByState(realLst, obsLst, hmm_model):
             re=result[j]
             for k in xrange(len(states)):
                 if re==states[k]:
-                    realSig[k].append(realLst[i][j][0]+0.1)
+                    realSig[k].append(realLst[i][j][0])
                     realCons[k].append(realLst[i][j][1])
+#                     fosig[k].write(str(realLst[i][j][0])+"\n")
+#                     focons[k].write(str(realLst[i][j][1])+"\n")
                     break
     for i in xrange(len(states)):
         par_for_st=[]
         par_for_st.append(ss.gamma.fit(realSig[i]))
         par_for_st.append(ss.gamma.fit(realCons[i]))
         gamma_par[states[i]]=par_for_st
+#         print states[i],len(realSig[i])
+#         fosig[i].close()
+#         focons[i].close()
     return gamma_par
     
 def runHmm():
@@ -222,7 +253,7 @@ def runHmm():
     print 1
     gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
     print 2
-    hmm_all[0]=buildLeftGamma(gamma_parL)
+#     hmm_all[0]=buildLeftGamma(gamma_parL)
     print 3
     hmm_all.append(buildMid())
     print 4
@@ -230,7 +261,7 @@ def runHmm():
     print 5
     gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
     print 6
-    hmm_all[2]=buildRightGamma(gamma_parR)
+#     hmm_all[2]=buildRightGamma(gamma_parR)
     trainTS=time.time()
     print 'trainTS: '+str(trainTS-beg)
     left=0
@@ -238,8 +269,8 @@ def runHmm():
     mid=0
     ind=[0 for i in xrange(len(realAll))]
     for k in xrange(len(realAll)):
-        x=realAll[k]
-#         x=allObs[k]
+#         x=realAll[k]
+        x=allObs[k]
         ma=0
         ind[k]=0
 # 	result=hmm_model.viterbi(x)
@@ -259,9 +290,9 @@ def runHmm():
         pr0=hmm_all[0].evaluate(x)
         pr2=hmm_all[2].evaluate(x)
 #         print str(pr0)+"\t"+str(pr2)
-        if pr0>2*pr2:
+        if pr0>thres*pr2:
             ind[k]=0
-        elif pr2>2*pr0:
+        elif pr2>thres*pr0:
             ind[k]=2
         else:
             ind[k]=1

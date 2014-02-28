@@ -466,10 +466,9 @@ class HMMgamma:
         self.init_matrix = [ln_0 for st in xrange(N)]
         self.init_matrix_copy = [ln_0 for st in xrange(N)]
     	num=1.0*sum([Pi_matrix[i] for i in Pi_matrix])
-	if num<1:
-	    num=1.0
         for st in Pi_matrix:
-            Pi_matrix[st]=self.__ln(Pi_matrix[st]/num)
+            if num>0:
+                Pi_matrix[st]=self.__ln(Pi_matrix[st]/num)
             self.init_matrix[self.st_list_index[st]] = Pi_matrix[st]
             
     
@@ -492,10 +491,9 @@ class HMMgamma:
         
         for st_i in A_matrix:
             num=1.0*sum([A_matrix[st_i][i] for i in A_matrix[st_i]])
-	    if num<1:
-	    	num=1.0
             for st_j in A_matrix[st_i]:
-            	A_matrix[st_i][st_j]=self.__ln(A_matrix[st_i][st_j]/num)
+                if num>0:
+                    A_matrix[st_i][st_j]=self.__ln(A_matrix[st_i][st_j]/num)
                 self.trans_matrix[self.st_list_index[st_i]][self.st_list_index[st_j]] = A_matrix[st_i][st_j]
     
     # set the probability of emitting observation[ob] at state[st]

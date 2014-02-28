@@ -24,7 +24,16 @@ trainLObs=[]
 trainRObs=[]
 allObs=[]
 meanObs=[]
-thres=2
+thres=4
+
+def movingAve(x,n):
+    ret=[]
+    n/=2
+    for i in xrange(len(x)+1):
+        a=max(i-n,0)
+        b=min(i+n,len(x)-1)
+        ret.append(1.0*sum(x[a:b+1])/(b-a+1))
+    return ret
 
 def readData(obsLst, realLst, fileF, fileC):
     rowSig=[]
@@ -36,11 +45,11 @@ def readData(obsLst, realLst, fileF, fileC):
         cons=consFile.readline().strip()
         if len(sig)<1 or len(cons)<1:
             continue
-        tempSig=[float(x) for x in sig.split('\t')]
+        tempSig=movingAve([float(x) for x in sig.split('\t')],5)
         meanSig=np.mean(tempSig)
         stdSig=np.std(tempSig)
         #tempCons=[float(x) if float(x)>0 else 0 for x in cons.split('\t')]
-        tempCons=[float(x) for x in cons.split('\t')]
+        tempCons=movingAve([float(x) for x in cons.split('\t')],5)
         meanCons=np.mean(tempCons)
         stdCons=np.std(tempCons)
         obs=[]
@@ -97,30 +106,29 @@ def readData(obsLst, realLst, fileF, fileC):
 
 def buildLeft():
     hmm_model = hmm_faster.HMM()
-    hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
+    hmm_model.set_states(['Peak', 'Drop','Bg'])
     hmm_model.set_observations(['hfhc', 'hfmc', 'hflc', 'mfhc', 'mfmc', 'mflc','lfhc', 'lfmc', 'lflc'])
     hmm_model.randomize_matrices(seed = int(time.time()))
-    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
-    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.4},
-        'Drop':{'Peak': 0.5, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.1},
-        'Active':{'Peak': 0.1, 'Drop': 0.3, 'Active': 0.3, 'Bg':0.1},
-        'Bg':{'Peak': 0.2, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.7}}
+    Pi_matrix={'Peak': 1, 'Drop': 6, 'Bg':1}
+    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.1, 'Bg':0.4},
+        'Drop':{'Peak': 0.5, 'Drop': 0.3, 'Bg':0.1},
+        'Bg':{'Peak': 0.1, 'Drop': 0.1, 'Bg':0.7}}
 #     E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0.4, 'mfmc': 0.4, 'mflc': 0.1,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
 #         'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.1, 'mfmc': 0.1, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
 #         'Active':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.3, 'mfmc': 0.5, 'mflc': 0.2,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
 #         'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 2, 'mflc': 3,'lfhc': 0, 'lfmc': 2, 'lflc': 3}}
-    E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0, 'mfmc': 0, 'mflc': 0,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
-        'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.1, 'mfmc': 0.1, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
-        'Active':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.3, 'mfmc': 0.5, 'mflc': 0.2,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
-        'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 2, 'mflc': 3,'lfhc': 0, 'lfmc': 2, 'lflc': 3}}
+    E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0.3, 'mfmc': 0.3, 'mflc': 0,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
+        'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.2, 'mfmc': 0.3, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
+        'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 0.2, 'mflc': 3,'lfhc': 0, 'lfmc': 0.2, 'lflc': 3}}
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_matrix(E_matrix)
     hmm_model.train(sum(trainLObs,[]), max_iteration=1000, delta=0.001)
     print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
     print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
-    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
     print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DD',math.exp(hmm_model.get_transition('Drop','Drop'))
+    print 'DB',math.exp(hmm_model.get_transition('Drop','Bg'))
     print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
@@ -146,18 +154,16 @@ def buildMid():
 
 def buildRight():
     hmm_model = hmm_faster.HMM()
-    hmm_model.set_states(['Active', 'Bg', 'Drop', 'Peak'])
+    hmm_model.set_states(['Bg', 'Drop', 'Peak'])
     hmm_model.set_observations(['hfhc', 'hfmc', 'hflc', 'mfhc', 'mfmc', 'mflc','lfhc', 'lfmc', 'lflc'])
     hmm_model.randomize_matrices(seed = int(time.time()))
-    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 3, 'Bg':7}
-    T_matrix={'Peak':{'Peak': 0.6, 'Drop': 0.5, 'Active': 0.1, 'Bg':0.1},
-        'Drop':{'Peak': 0.1, 'Drop': 0.2, 'Active': 0.5, 'Bg':0.1},
-        'Active':{'Peak': 0.1, 'Drop': 0.1, 'Active': 0.6, 'Bg':0.1},
-        'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.7}}
-    E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0, 'mfmc': 0, 'mflc': 0,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
-        'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.1, 'mfmc': 0.1, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
-        'Active':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.3, 'mfmc': 0.5, 'mflc': 0.2,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
-        'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 2, 'mflc': 3,'lfhc': 0, 'lfmc': 2, 'lflc': 3}}
+    Pi_matrix={'Peak': 1, 'Drop': 1, 'Bg':7}
+    T_matrix={'Peak':{'Peak': 0.6, 'Drop': 0.5, 'Bg':0.1},
+        'Drop':{'Peak': 0.1, 'Drop': 0.9, 'Bg':0.1},
+        'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Bg':0.7}}
+    E_matrix={'Peak':{'hfhc': 0.4, 'hfmc': 0.4, 'hflc': 0.2,'mfhc': 0.3, 'mfmc': 0.3, 'mflc': 0,'lfhc': 0, 'lfmc': 0, 'lflc': 0},
+        'Drop':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0.2, 'mfmc': 0.3, 'mflc': 0,'lfhc': 0.5, 'lfmc': 0.48, 'lflc': 0.02},
+        'Bg':{'hfhc': 0, 'hfmc': 0, 'hflc': 0,'mfhc': 0, 'mfmc': 0.2, 'mflc': 3,'lfhc': 0, 'lfmc': 0.2, 'lflc': 3}}
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_matrix(E_matrix)
@@ -165,38 +171,38 @@ def buildRight():
     hmm_model.train(sum(trainRObs, []), max_iteration=1000, delta=0.001)
     print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
     print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
-    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
     print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DD',math.exp(hmm_model.get_transition('Drop','Drop'))
+    print 'DB',math.exp(hmm_model.get_transition('Drop','Bg'))
     print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
 def buildLeftGamma(gamma_par):
     hmm_model = hmm_gamma.HMMgamma()
-    hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
-    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
-    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.4},
-        'Drop':{'Peak': 0.5, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.1},
-        'Active':{'Peak': 0.1, 'Drop': 0.3, 'Active': 0.3, 'Bg':0.1},
-        'Bg':{'Peak': 0.2, 'Drop': 0.2, 'Active': 0.1, 'Bg':0.7}}
+    hmm_model.set_states(['Peak', 'Drop','Bg'])
+    Pi_matrix={'Peak': 1, 'Drop': 10, 'Bg':0}
+    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0, 'Bg':0.4},
+        'Drop':{'Peak': 0.5, 'Drop': 0.2, 'Bg':0.1},
+        'Bg':{'Peak': 0.2, 'Drop': 0.2, 'Bg':0.7}}
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
     hmm_model.train(sum(realL,[]), max_iteration=100, delta=0.001)
     print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
     print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
-    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
     print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DD',math.exp(hmm_model.get_transition('Drop','Drop'))
+    print 'DB',math.exp(hmm_model.get_transition('Drop','Bg'))
     print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
 def buildRightGamma(gamma_par):
     hmm_model = hmm_gamma.HMMgamma()
-    hmm_model.set_states(['Active', 'Peak', 'Drop','Bg'])
-    Pi_matrix={'Peak': 1, 'Drop': 1, 'Active': 7, 'Bg':3}
-    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.5, 'Active': 0.1, 'Bg':0},
-        'Drop':{'Peak': 0.1, 'Drop': 0.2, 'Active': 0.5, 'Bg':0.1},
-        'Active':{'Peak': 0.1, 'Drop': 0.1, 'Active': 0.6, 'Bg':0.1},
-        'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Active': 0.1, 'Bg':0.7}}
+    hmm_model.set_states(['Peak', 'Drop','Bg'])
+    Pi_matrix={'Peak': 1, 'Drop': 0, 'Bg':10}
+    T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.5,'Bg':0},
+        'Drop':{'Peak': 0.1, 'Drop': 0.2, 'Bg':0.1},
+        'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Bg':0.7}}
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
@@ -204,28 +210,31 @@ def buildRightGamma(gamma_par):
     hmm_model.train(sum(realR,[]), max_iteration=100, delta=0.001)
     print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
     print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
-    print 'PA',math.exp(hmm_model.get_transition('Peak','Active'))
     print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
+    print 'DD',math.exp(hmm_model.get_transition('Drop','Drop'))
+    print 'DB',math.exp(hmm_model.get_transition('Drop','Bg'))
     print 'DP',math.exp(hmm_model.get_transition('Drop','Peak'))
     return hmm_model
 
-def getDistrByState(realLst, obsLst, hmm_model):
-    states=['Active','Bg','Drop','Peak']
+def getDistrByState(realLst, obsLst, hmm_model, outfile):
+    states=['Bg','Drop','Peak']
     realSig=[]
     realCons=[]
     gamma_par={}
     fosig=[]
     focons=[]
+    fostate=open(outfile,'w')
 #     result=hmm_model.viterbi(meanObs)
 #     print meanObs
 #     print result
     for st in states:
         realSig.append([])
         realCons.append([]) 
-#         fosig.append(open('fitting/'+st+'.sig','w'))
-#         focons.append(open('fitting/'+st+'.cons','w'))
+        fosig.append(open('fitting/'+st+'.sig','w'))
+        focons.append(open('fitting/'+st+'.cons','w'))
     for i in xrange(len(obsLst)):
         x=obsLst[i]
+        nowseq=[]
         result=hmm_model.viterbi(x)
         for j in xrange(len(result)):
             re=result[j]
@@ -233,17 +242,20 @@ def getDistrByState(realLst, obsLst, hmm_model):
                 if re==states[k]:
                     realSig[k].append(realLst[i][j][0])
                     realCons[k].append(realLst[i][j][1])
-#                     fosig[k].write(str(realLst[i][j][0])+"\n")
-#                     focons[k].write(str(realLst[i][j][1])+"\n")
+                    fosig[k].write(str(realLst[i][j][0])+"\n")
+                    focons[k].write(str(realLst[i][j][1])+"\n")
+                    nowseq.append(str(k))
                     break
+        fostate.write("\t".join(nowseq)+"\n")
+    fostate.close();
     for i in xrange(len(states)):
         par_for_st=[]
         par_for_st.append(ss.gamma.fit(realSig[i]))
         par_for_st.append(ss.gamma.fit(realCons[i]))
         gamma_par[states[i]]=par_for_st
 #         print states[i],len(realSig[i])
-#         fosig[i].close()
-#         focons[i].close()
+        fosig[i].close()
+        focons[i].close()
     return gamma_par
     
 def runHmm():
@@ -251,17 +263,21 @@ def runHmm():
     beg=time.time()
     hmm_all.append(buildLeft())
     print 1
-    gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0])
+    gamma_parL=getDistrByState(realL, trainLObs, hmm_all[0],'stateL.tab')
     print 2
-#     hmm_all[0]=buildLeftGamma(gamma_parL)
-    print 3
     hmm_all.append(buildMid())
-    print 4
+    print 3
     hmm_all.append(buildRight())
+    print 4
+    gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2],'stateR.tab')
     print 5
-    gamma_parR=getDistrByState(realR, trainRObs, hmm_all[2])
+    print meanObs
+    for i in xrange(len(hmm_all)):
+        print hmm_all[i].viterbi(meanObs)
+        print hmm_all[i].evaluate(meanObs)
+    hmm_all[0]=buildLeftGamma(gamma_parL)
     print 6
-#     hmm_all[2]=buildRightGamma(gamma_parR)
+    hmm_all[2]=buildRightGamma(gamma_parR)
     trainTS=time.time()
     print 'trainTS: '+str(trainTS-beg)
     left=0
@@ -269,8 +285,8 @@ def runHmm():
     mid=0
     ind=[0 for i in xrange(len(realAll))]
     for k in xrange(len(realAll)):
-#         x=realAll[k]
-        x=allObs[k]
+        x=realAll[k]
+#         x=allObs[k]
         ma=0
         ind[k]=0
 # 	result=hmm_model.viterbi(x)
@@ -312,10 +328,6 @@ def runHmm():
             right+=1
         else:
             mid+=1
-#     print meanObs
-#     for i in xrange(len(hmm_all)):
-#         print hmm_all[i].viterbi(meanObs)
-#         print hmm_all[i].evaluate(meanObs)
     testTS=time.time()
     fo=open('test.lst','w')
     fo.write('\n'.join([str(x) for x in ind]))

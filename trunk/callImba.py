@@ -187,7 +187,7 @@ def buildLeftGamma(gamma_par):
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
-#     hmm_model.train(sum(realL,[]), max_iteration=100, delta=0.001)
+    hmm_model.train(sum(realL,[]), max_iteration=100, delta=0.001)
     print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
     print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
     print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))
@@ -203,11 +203,14 @@ def buildRightGamma(gamma_par):
     T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0.5,'Bg':0},
         'Drop':{'Peak': 0, 'Drop': 0.2, 'Bg':0.1},
         'Bg':{'Peak': 0.5, 'Drop': 0.1, 'Bg':0.7}}
+#     T_matrix={'Peak':{'Peak': 0.3, 'Drop': 0, 'Bg':0.4},
+#         'Drop':{'Peak': 0.5, 'Drop': 0.5, 'Bg':0},
+#         'Bg':{'Peak': 0.2, 'Drop': 0.1, 'Bg':0.7}}
     hmm_model.set_initial_matrix(Pi_matrix)
     hmm_model.set_transition_matrix(T_matrix)
     hmm_model.set_emission_table(gamma_par)
     #print hmm_model.get_initial_matrix()
-#     hmm_model.train(sum(realL,[]), max_iteration=100, delta=0.001)
+    hmm_model.train(sum(realL,[]), max_iteration=100, delta=0.001)
     print 'PD',math.exp(hmm_model.get_transition('Peak','Drop'))
     print 'PB',math.exp(hmm_model.get_transition('Peak','Bg'))
     print 'PP',math.exp(hmm_model.get_transition('Peak','Peak'))

@@ -60,7 +60,7 @@ public class NpfDensityWriter implements DensityWriter{
 	    int end = start + length;
 	    for(int i = start; i < end; ++i, ++_currentPos){
 	      if(!_aboveThreshold){
-	        if(batch[i] > _threshold){
+	        if(batch[i] > -_threshold){
 	          _aboveThreshold = true;
 	          _startPeakPos = _currentPos;
 	          _currentMax = batch[i];

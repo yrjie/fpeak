@@ -201,7 +201,8 @@ public class KDEChromosome {
   public void run(Settings settings, DensityWriter dw, boolean verboseFlag, float wg_threshold, File[] bgfile, File[] ipfile) throws Exception {
 //    _threshold = computeThreshold(settings);
 	    _threshold = wg_threshold;
-	    dw.setThreshold(_threshold);
+//	    dw.setThreshold(_threshold);
+	    dw.setThreshold(2);
 	    
 	    boolean bg_hit = false;
 	    boolean ip_hit = false;
@@ -291,6 +292,9 @@ public class KDEChromosome {
 	    long currentChromPos = 0;
 	    int arrPos = 0;
 	    boolean aboveThreshold = false;
+	    if(!bg_used && !ip_used){
+	    	System.out.println("running the P/M version");
+	    }
 	    for(int i = 0; i < numBases; ++i){
 	      currentChromPos = i + _firstCut;
 	      arrPos = i % BATCH_SIZE;
@@ -372,18 +376,21 @@ public class KDEChromosome {
     double[] PRECOMPUTE = settings.precompute;
     
     double sum = 0.0;
+    double sumP=0.0, sumM=0.0;
     for(int i = cutIdx-1; i > -1; --i){
       if (cuts[i].getPosition() < minPos) 
         break;
       int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
       if(!settings.dnaseExperimentType) {
     	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+    		  sumP+=settings.precompute[d];
     		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
     		  sum += settings.precompute[d];
     	  } else {
     		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
+    			  sumM+=settings.precompute[d];
     			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
-    			  sum += settings.precompute[d];    		  
+    			  sum += settings.precompute[d];
     		  }
     	  }
       } else {
@@ -402,10 +409,12 @@ public class KDEChromosome {
       
       if(!settings.dnaseExperimentType) {
     	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+    		  sumP+=settings.precompute[d];
     		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
     		  sum += settings.precompute[d];
     	  } else {
     		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
+    			  sumM+=settings.precompute[d];
     			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
     			  sum += settings.precompute[d];    		  
     		  }
@@ -415,7 +424,8 @@ public class KDEChromosome {
       }
     }
     
-    return (float)(sum / (double)settings.bandwidth);
+//    return (float)(sum / (double)settings.bandwidth);
+    return (float)Math.log(sumP/sumM);
   }
   
   private float bgdensity(Settings settings, long chromPos, int cutIdx, Sequence[] cuts, WigChromosome bgdata){

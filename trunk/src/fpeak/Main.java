@@ -1,12 +1,9 @@
 package fpeak;
-import java.awt.Dimension;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
-
-import javax.swing.JFrame;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -20,7 +17,6 @@ import fpeak.Util;
 import io.NpfDensityWriter;
 import io.BedReader;
 import io.DensityWriter;
-import background.*;
 
 public class Main {
   

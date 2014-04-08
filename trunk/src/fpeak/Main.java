@@ -84,7 +84,7 @@ public class Main {
   	long ncuts = 0l;
 	float temp_threshold = 0f;
 
-    System.out.println("F-Seq Version 1.85");
+    System.out.println("Fpeak Version 1.0");
     
     try{
       CommandLine cmd = parser.parse(opts, argv);
@@ -142,7 +142,7 @@ public class Main {
     
     if(showHelp || (inputDirectory == null && files.length==0)){
       HelpFormatter formatter = new HelpFormatter();
-      formatter.printHelp( "fseq [options]... [file(s)]...", opts );
+      formatter.printHelp( "Fpeak [options]... [file(s)]...", opts );
       System.exit(1);
     }
     
@@ -157,6 +157,7 @@ public class Main {
     //compute fragment offset
     if(fragment_size == -1) {
     	fragment_size = wgShiftCalc(chrs);
+    	System.out.println(fragment_size);
     }
     fragment_offset = (int)(fragment_size/2);
     

@@ -52,71 +52,6 @@ public class KDEChromosome {
 	    return _cuts.length;
   }
   
-  public void run(Settings settings, DensityWriter dw, boolean verboseFlag, float wg_threshold) throws Exception {
-    
-//    _threshold = computeThreshold(settings);
-    _threshold = wg_threshold;
-    dw.setThreshold(_threshold);
-    
-//    if(verboseFlag){
-//    	System.out.println(_chromosome + ": Threshold: " + _threshold);
-//    }
-    
-    Sequence[] cuts = _cuts;
-//    long[] cuts = _cuts;
-    
-    float[] density = new float[BATCH_SIZE];
-    
-    if(verboseFlag){
-      System.out.println(_chromosome + ": first=" + _firstCut + ", last=" + _lastCut);
-      for(int i = 0; i < 20; ++i){
-        System.out.print(".");
-      }
-      System.out.println();
-    }
-    int numBases = (int)Math.abs(_lastCut - _firstCut);
-    
-    int incr =  numBases / 20;
-    int mod = BATCH_SIZE -1;
-    int peaks = 0;
-    
-    long start = System.currentTimeMillis();
-    int cutIdx = 0;
-    long currentChromPos = 0;
-    int arrPos = 0;
-    boolean aboveThreshold = false;
-    for(int i = 0; i < numBases; ++i){
-      currentChromPos = i + _firstCut;
-      arrPos = i % BATCH_SIZE;
-      density[arrPos] = (float)density(settings, currentChromPos, cutIdx, cuts);
-      
-      if(!aboveThreshold && density[arrPos] > _threshold){
-        aboveThreshold = true;
-        ++peaks;
-      }else if(aboveThreshold && density[arrPos] < _threshold){
-        aboveThreshold = false;
-      }
-      while(cutIdx < cuts.length && currentChromPos > cuts[cutIdx].getPosition())
-        ++cutIdx;
-      
-      if(verboseFlag && i % incr == 0)
-        System.out.print(".");
-      if(i % BATCH_SIZE == mod){
-        dw.writeDensity(density, 0, BATCH_SIZE); 
-      }
-    }
-    
-    int len = numBases % BATCH_SIZE;
-    dw.writeDensity(density, 0, len);
-    
-    if(verboseFlag){
-      System.out.println();
-      System.out.println(_chromosome + ": Completed in " + (System.currentTimeMillis() - start)/1000d + " seconds.");
-      System.out.println(_chromosome + ": Found " + peaks + " peaks.");
-      System.out.println("-----------------------");
-    }
-  }
-  
   /*
    * This function is the same as above but reads in a background uniqueness file and adjusts the
    * density estimate based on this.
@@ -201,8 +136,8 @@ public class KDEChromosome {
   public void run(Settings settings, DensityWriter dw, boolean verboseFlag, float wg_threshold, File[] bgfile, File[] ipfile) throws Exception {
 //    _threshold = computeThreshold(settings);
 	    _threshold = wg_threshold;
-//	    dw.setThreshold(_threshold);
-	    dw.setThreshold(2);
+	    dw.setThreshold(_threshold);
+//	    dw.setThreshold(10);
 	    
 	    boolean bg_hit = false;
 	    boolean ip_hit = false;
@@ -273,6 +208,8 @@ public class KDEChromosome {
 //	    long[] cuts = _cuts;
 	    
 	    float[] density = new float[BATCH_SIZE];
+	    float[] densityP = new float[BATCH_SIZE];
+	    float[] densityM = new float[BATCH_SIZE];
 	    
 	    if(verboseFlag){
 	      System.out.println(_chromosome + ": first=" + _firstCut + ", last=" + _lastCut);
@@ -292,6 +229,7 @@ public class KDEChromosome {
 	    long currentChromPos = 0;
 	    int arrPos = 0;
 	    boolean aboveThreshold = false;
+	    float[] sumPM=new float[2];
 	    if(!bg_used && !ip_used){
 	    	System.out.println("running the P/M version");
 	    }
@@ -300,7 +238,9 @@ public class KDEChromosome {
 	      arrPos = i % BATCH_SIZE;
 	      
 	      if(!bg_used && !ip_used) {
-	    	  density[arrPos] = (float)density(settings, currentChromPos, cutIdx, cuts);
+	    	  density[arrPos] = (float)densityPM(settings, currentChromPos, cutIdx, cuts, sumPM);
+	    	  densityP[arrPos] = sumPM[0];
+	    	  densityM[arrPos] = sumPM[1];
 	      } else {
 	    	  if(bg_used && !ip_used) {
 	    		  density[arrPos] = (float)bgdensity(settings, currentChromPos, cutIdx, cuts, bgchr);
@@ -326,12 +266,14 @@ public class KDEChromosome {
 	      if(verboseFlag && i % incr == 0)
 	        System.out.print(".");
 	      if(i % BATCH_SIZE == mod){
-	        dw.writeDensity(density, 0, BATCH_SIZE); 
+//	        dw.writeDensity(density, 0, BATCH_SIZE);
+	    	  dw.writeDensityPM(density, 0, BATCH_SIZE, densityP, densityM);
 	      }
 	    }
 	    
 	    int len = numBases % BATCH_SIZE;
-	    dw.writeDensity(density, 0, len);
+//	    dw.writeDensity(density, 0, len);
+	    dw.writeDensityPM(density, 0, len, densityP, densityM);
 	    
 	    if(verboseFlag){
 	      System.out.println();
@@ -382,13 +324,14 @@ public class KDEChromosome {
         break;
       int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
       if(!settings.dnaseExperimentType) {
-    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+    	  if (cuts[i].getStrand())
     		  sumP+=settings.precompute[d];
+    	  else sumM+=settings.precompute[d];
+    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
     		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
     		  sum += settings.precompute[d];
     	  } else {
     		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
-    			  sumM+=settings.precompute[d];
     			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
     			  sum += settings.precompute[d];
     		  }
@@ -424,9 +367,77 @@ public class KDEChromosome {
       }
     }
     
-//    return (float)(sum / (double)settings.bandwidth);
-    return (float)Math.log(sumP/sumM);
+    return (float)(sum / (double)settings.bandwidth);
+//    return (float)Math.log(sumP/sumM);
   }
+  
+  private static float densityPM(Settings settings, long chromPos, int cutIdx, Sequence[] cuts, float[] sumPM){
+	    
+	    long minPos = chromPos - settings.window;
+	    long maxPos = chromPos + settings.window;
+	    
+	    double[] PRECOMPUTE = settings.precompute;
+	    
+	    double sum = 0.0;
+	    sumPM[0]=0.0f;
+	    sumPM[1]=0.0f;
+	    for(int i = cutIdx-1; i > -1; --i){
+	      if (cuts[i].getPosition() < minPos) 
+	        break;
+	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
+	      if(!settings.dnaseExperimentType) {
+	    	  if (d<20){
+		    	  if (cuts[i].getStrand())
+		    		  sumPM[0]+=settings.precompute[d];
+		    	  else sumPM[1]+=settings.precompute[d];
+	    	  }
+	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
+	    		  sum += settings.precompute[d];
+	    	  } else {
+	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
+	    			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
+	    			  sum += settings.precompute[d];
+	    		  }
+	    	  }
+	      } else {
+	    	  sum += settings.precompute[d];
+	      }
+	    }
+	    
+	    for(int i = cutIdx; i < cuts.length; ++i){
+	      if (cuts[i].getPosition() > maxPos) break;
+	      
+	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
+	      
+	      //System.out.println(d);
+	      if(d > PRECOMPUTE.length-1)
+	        throw new IllegalStateException();
+	      
+	      if(!settings.dnaseExperimentType) {
+	    	  if (d<20){
+		    	  if (cuts[i].getStrand())
+		    		  sumPM[0]+=settings.precompute[d];
+		    	  else sumPM[1]+=settings.precompute[d];
+	    	  }
+	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
+	    		  sum += settings.precompute[d];
+	    	  } else {
+	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
+	    			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
+	    			  sum += settings.precompute[d];    		  
+	    		  }
+	    	  }
+	      } else {
+	    	  sum += settings.precompute[d];
+	      }
+	    }
+	    
+	    return (float)(sum / (double)settings.bandwidth);
+//	    return (float)Math.log(sumP/sumM);
+	  }
+  
   
   private float bgdensity(Settings settings, long chromPos, int cutIdx, Sequence[] cuts, WigChromosome bgdata){
     

@@ -28,6 +28,7 @@ public class NpfDensityWriter implements DensityWriter{
   private long _startPeakPos = 0;
   private boolean _aboveThreshold = false;
   private float _currentMax = 0.0f;
+  private float _currentMean = 0.0f;
   private long _currentMaxPos = 0;
   
   private NumberFormat nf;
@@ -60,7 +61,7 @@ public class NpfDensityWriter implements DensityWriter{
 	    int end = start + length;
 	    for(int i = start; i < end; ++i, ++_currentPos){
 	      if(!_aboveThreshold){
-	        if(batch[i] > -_threshold){
+	        if(batch[i] > _threshold){
 	          _aboveThreshold = true;
 	          _startPeakPos = _currentPos;
 	          _currentMax = batch[i];
@@ -79,6 +80,39 @@ public class NpfDensityWriter implements DensityWriter{
 	    }
 	  }
 	  
+	  public void writeDensityPM(float[] batch, int start, int length, float[] batchP, float[] batchM)
+		      throws IOException {
+		    int end = start + length;
+		    int cent=0,beg=0;
+		    for(int i = start; i < end; ++i, ++_currentPos){
+		      if(!_aboveThreshold){
+		        if(batch[i] > _threshold){
+		          _aboveThreshold = true;
+		          _startPeakPos = _currentPos;
+		          _currentMax = batch[i];
+		          _currentMaxPos = _currentPos;
+		          _currentMean = batch[i];
+		          cent=i;
+		          beg=i;
+		        }
+		      }else{ // aboveThreshold
+		        if(batch[i] > _threshold){
+		          _currentMax = Math.max(_currentMax, batch[i]);
+		          _currentMean+=batch[i];
+		          if(_currentMax == batch[i]){
+		        	  _currentMaxPos = _currentPos;
+		        	  cent=i;
+		          }
+		        }else{
+		          _aboveThreshold = false;
+		          _currentMean/=(i-beg);
+//		          doWrite(batchP, batchM, cent);
+		          doWrite(batchP, batchM, (beg+i)/2);
+		        }
+		      }
+		    }
+	  }
+	  
 	  private void doWrite() throws IOException {
 		long centerPos = (long)_currentMaxPos - _startPeakPos;
 	    bw.write(chr + "\t" + _startPeakPos + "\t" + (_currentPos-1) + "\t" + (chr + "." + _counter++) + "\t" + "0" + "\t" + "." + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
@@ -86,5 +120,45 @@ public class NpfDensityWriter implements DensityWriter{
 	    _currentMaxPos = 0;
 	    _startPeakPos = 0l;
 	  }
-
+	  
+	  private void doWrite(float[] batchP, float[] batchM, int cent) throws IOException {
+		  	int win=500, binN=20, inc;
+		  	long centerPos = (long)_currentMaxPos - _startPeakPos;
+		  	String pmstr="";
+		  	double dist2uni, sump, summ;
+		  	double[] psig=new double[binN], msig=new double[binN];
+		  	inc=2*win/binN;
+		  	sump=summ=0.01;
+		  	dist2uni=0;
+		  	for (int i=0;i<binN;i++){
+		  		int beg=cent-win+i*inc;
+		  		float meanP,meanM;
+		  		meanP=meanM=0;
+		  		for (int j=0;j<inc;j++){
+			  		int ind=Math.max(0, beg+j);
+			  		ind=Math.min(batchP.length-1, ind);
+			  		meanP+=batchP[ind];
+			  		meanM+=batchM[ind];
+		  		}
+			  	pmstr+="\t"+Math.log(meanP/meanM);
+			  	psig[i]=meanP;
+			  	msig[i]=meanM;
+			  	sump+=meanP;
+			  	summ+=meanM;
+		  	}
+		  	for (int i=0;i<binN;i++){
+		  		double tempP, tempM;
+		  		psig[i]/=sump;
+		  		msig[i]/=summ;
+		  		tempP=psig[i]-1.0/binN;
+		  		tempM=msig[i]-1.0/binN;
+		  		dist2uni+=(tempP*tempP+tempM*tempM);
+		  	}
+		  	dist2uni=Math.sqrt(dist2uni);
+//		    bw.write(chr + "\t" + _startPeakPos + "\t" + (_currentPos-1) + "\t" + (chr + "." + _counter++) + "\t" + "0" + "\t" + "." + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + pmstr+ "\n");
+		  	bw.write(chr + "\t" + _startPeakPos + "\t" + (_currentPos-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentMean/dist2uni) + "\t" + "." + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos +"\n");
+		    _currentMax = 0.0f;
+		    _currentMaxPos = 0;
+		    _startPeakPos = 0l;
+	  }
 }

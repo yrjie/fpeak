@@ -149,8 +149,8 @@ public class NpfDensityWriter implements DensityWriter{
 		          _currentMax = batch[i];
 		          _currentMaxPos = _currentPos;
 		          _currentMean = batch[i];
-		          _currentP=batchP[i];
-		          _currentM=batchM[i];
+//		          _currentP=batchP[i];
+//		          _currentM=batchM[i];
 		          cent=i;
 		          beg=i;
 		        }
@@ -158,8 +158,8 @@ public class NpfDensityWriter implements DensityWriter{
 		        if(batch[i] > _threshold){
 		          _currentMax = Math.max(_currentMax, batch[i]);
 		          _currentMean+=batch[i];
-		          _currentP+=batchP[i];
-		          _currentM+=batchM[i];
+//		          _currentP+=batchP[i];
+//		          _currentM+=batchM[i];
 		          if(_currentMax == batch[i]){
 		        	  _currentMaxPos = _currentPos;
 		        	  cent=i;
@@ -167,11 +167,21 @@ public class NpfDensityWriter implements DensityWriter{
 		        }else{
 		          _aboveThreshold = false;
 		          _currentMean/=(i-beg+1);
-		          _currentP/=(i-beg+1);
-		          _currentM/=(i-beg+1);
+//		          _currentP/=(i-beg+1);
+//		          _currentM/=(i-beg+1);
 		          // issue: may have overlap
-		          left=getMaxLeft(batch, batchP, batchM, (beg+i)/2)+batchStart;
-		          right=getMaxRight(batch, batchP, batchM, (beg+i)/2)+batchStart+1;
+		          left=getMaxLeft(batch, batchP, batchM, (beg+i)/2);
+		          right=getMaxRight(batch, batchP, batchM, (beg+i)/2);
+		          _currentP=0;
+		          _currentM=0;
+		          for (int j=(int)left;j<=(int)right;j++){
+		        	  if (j<0||j>=batchP.length)
+		        		  continue;
+		        	  _currentP+=batchP[j];
+		        	  _currentM+=batchM[j];
+		          }
+		          left+=batchStart;
+		          right+=(batchStart+1);
 		          doWrite(left, right);
 //		          doWrite(batchP, batchM, (beg+i)/2);
 		        }

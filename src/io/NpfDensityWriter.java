@@ -28,8 +28,10 @@ public class NpfDensityWriter implements DensityWriter{
   private long _startPeakPos = 0;
   private boolean _aboveThreshold = false;
   private float _currentMax = 0.0f;
-  private float _currentMean = 0.0f;
   private long _currentMaxPos = 0;
+  private float _currentMean = 0.0f;
+  private float _currentP = 0.0f;
+  private float _currentM = 0.0f;
   
   private double _currentRatioL = 0;
   private double _currentRatioR = 0;
@@ -147,6 +149,8 @@ public class NpfDensityWriter implements DensityWriter{
 		          _currentMax = batch[i];
 		          _currentMaxPos = _currentPos;
 		          _currentMean = batch[i];
+		          _currentP=batchP[i];
+		          _currentM=batchM[i];
 		          cent=i;
 		          beg=i;
 		        }
@@ -154,6 +158,8 @@ public class NpfDensityWriter implements DensityWriter{
 		        if(batch[i] > _threshold){
 		          _currentMax = Math.max(_currentMax, batch[i]);
 		          _currentMean+=batch[i];
+		          _currentP+=batchP[i];
+		          _currentM+=batchM[i];
 		          if(_currentMax == batch[i]){
 		        	  _currentMaxPos = _currentPos;
 		        	  cent=i;
@@ -161,6 +167,8 @@ public class NpfDensityWriter implements DensityWriter{
 		        }else{
 		          _aboveThreshold = false;
 		          _currentMean/=(i-beg+1);
+		          _currentP/=(i-beg+1);
+		          _currentM/=(i-beg+1);
 		          // issue: may have overlap
 		          left=getMaxLeft(batch, batchP, batchM, (beg+i)/2)+batchStart;
 		          right=getMaxRight(batch, batchP, batchM, (beg+i)/2)+batchStart+1;
@@ -181,7 +189,8 @@ public class NpfDensityWriter implements DensityWriter{
 	  
 	  private void doWrite(long left, long right) throws IOException {
 			long centerPos = (long)_currentMaxPos - left;
-		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
+//		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
+			bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentP) + "\t" + nf.format(_currentM) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
 		    _currentMax = 0.0f;
 		    _currentMaxPos = 0;
 		    _startPeakPos = 0l;

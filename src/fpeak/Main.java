@@ -157,7 +157,6 @@ public class Main {
     //compute fragment offset
     if(fragment_size == -1) {
     	fragment_size = wgShiftCalc(chrs);
-    	System.out.println(fragment_size);
     }
     fragment_offset = (int)(fragment_size/2);
     

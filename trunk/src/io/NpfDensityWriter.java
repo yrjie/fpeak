@@ -31,6 +31,9 @@ public class NpfDensityWriter implements DensityWriter{
   private float _currentMean = 0.0f;
   private long _currentMaxPos = 0;
   
+  private double _currentRatioL = 0;
+  private double _currentRatioR = 0;
+  
   private NumberFormat nf;
   
   public NpfDensityWriter(File f, String chr, long chromStart, int step) throws IOException {
@@ -80,10 +83,62 @@ public class NpfDensityWriter implements DensityWriter{
 	    }
 	  }
 	  
+	  public int getMaxLeft(float[] batch,float[] batchP, float[] batchM, int cent){
+		  int fragLen=200, head, tail, maxIdx=cent-fragLen/2;
+		  double sumP=0.001, sumM=0.001, maxR=1.0;
+		  tail=cent;
+		  for (head=cent; head>=0; head--){
+			  if (batch[head]<_threshold/2)
+				  break;
+			  if (tail-head<fragLen/2){
+				  sumP+=batchP[head];
+				  sumM+=batchM[head];
+			  }
+			  else {
+				  sumP-=batchP[tail];
+				  sumM-=batchM[tail];
+				  tail--;
+				  if (sumP/sumM>maxR){
+					  maxR=sumP/sumM;
+					  maxIdx=(head+tail)/2;
+				  }
+			  }
+		  }
+		  _currentRatioL=maxR;
+		  return maxIdx;
+	  }
+	  
+	  public int getMaxRight(float[] batch,float[] batchP, float[] batchM, int cent){
+		  int fragLen=200, head, tail, maxIdx=cent+fragLen/2;
+		  double sumP=0.001, sumM=0.001, maxR=1.0;
+		  tail=cent;
+		  for (head=cent; head<batch.length; head++){
+			  if (batch[head]<_threshold/2)
+				  break;
+			  if (head-tail<fragLen/2){
+				  sumP+=batchP[head];
+				  sumM+=batchM[head];
+			  }
+			  else {
+				  sumP-=batchP[tail];
+				  sumM-=batchM[tail];
+				  tail++;
+				  if (sumM/sumP>maxR){
+					  maxR=sumM/sumP;
+					  maxIdx=(head+tail)/2;
+				  }
+			  }
+		  }
+		  _currentRatioR=maxR;
+		  return maxIdx;
+	  }
+	  
 	  public void writeDensityPM(float[] batch, int start, int length, float[] batchP, float[] batchM)
 		      throws IOException {
 		    int end = start + length;
 		    int cent=0,beg=0;
+		    long left, right;
+		    long batchStart=_currentPos;
 		    for(int i = start; i < end; ++i, ++_currentPos){
 		      if(!_aboveThreshold){
 		        if(batch[i] > _threshold){
@@ -106,8 +161,11 @@ public class NpfDensityWriter implements DensityWriter{
 		        }else{
 		          _aboveThreshold = false;
 		          _currentMean/=(i-beg+1);
-//		          doWrite(batchP, batchM, cent);
-		          doWrite(batchP, batchM, (beg+i)/2);
+		          // issue: may have overlap
+		          left=getMaxLeft(batch, batchP, batchM, (beg+i)/2)+batchStart;
+		          right=getMaxRight(batch, batchP, batchM, (beg+i)/2)+batchStart+1;
+		          doWrite(left, right);
+//		          doWrite(batchP, batchM, (beg+i)/2);
 		        }
 		      }
 		    }
@@ -119,6 +177,14 @@ public class NpfDensityWriter implements DensityWriter{
 	    _currentMax = 0.0f;
 	    _currentMaxPos = 0;
 	    _startPeakPos = 0l;
+	  }
+	  
+	  private void doWrite(long left, long right) throws IOException {
+			long centerPos = (long)_currentMaxPos - left;
+		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
+		    _currentMax = 0.0f;
+		    _currentMaxPos = 0;
+		    _startPeakPos = 0l;
 	  }
 	  
 	  private void doWrite(float[] batchP, float[] batchM, int cent) throws IOException {

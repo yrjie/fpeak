@@ -535,9 +535,6 @@ public class KDEChromosome {
 	    long maxPos = chromPos + settings.window;
 	    
 	    double[] PRECOMPUTE = settings.precompute;
-	   
-	    int bgOffset = (int)_firstCut - bgdata.getStart(); //convert to 0 based
-	    
 	    double sum = 0.0;
 	    int b;
 	    sumPM[0]=0.0f;

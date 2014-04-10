@@ -86,24 +86,22 @@ public class NpfDensityWriter implements DensityWriter{
 	  }
 	  
 	  public int getMaxLeft(float[] batch,float[] batchP, float[] batchM, int cent){
-		  int fragLen=200, head, tail, maxIdx=cent-fragLen/2;
+		  int fragLen=200, head, tail, maxIdx=cent-fragLen/4;
 		  double sumP=0.001, sumM=0.001, maxR=1.0;
 		  tail=cent;
 		  for (head=cent; head>=0; head--){
 			  if (batch[head]<_threshold/2)
 				  break;
-			  if (tail-head<fragLen/2){
-				  sumP+=batchP[head];
-				  sumM+=batchM[head];
-			  }
-			  else {
-				  sumP-=batchP[tail];
-				  sumM-=batchM[tail];
-				  tail--;
+			  sumP+=batchP[head];
+			  sumM+=batchM[head];
+			  if (tail-head>=fragLen/2){
 				  if (sumP/sumM>maxR){
 					  maxR=sumP/sumM;
 					  maxIdx=(head+tail)/2;
 				  }
+				  sumP-=batchP[tail];
+				  sumM-=batchM[tail];
+				  tail--;
 			  }
 		  }
 		  _currentRatioL=maxR;
@@ -111,24 +109,22 @@ public class NpfDensityWriter implements DensityWriter{
 	  }
 	  
 	  public int getMaxRight(float[] batch,float[] batchP, float[] batchM, int cent){
-		  int fragLen=200, head, tail, maxIdx=cent+fragLen/2;
+		  int fragLen=200, head, tail, maxIdx=cent+fragLen/4;
 		  double sumP=0.001, sumM=0.001, maxR=1.0;
 		  tail=cent;
 		  for (head=cent; head<batch.length; head++){
 			  if (batch[head]<_threshold/2)
 				  break;
-			  if (head-tail<fragLen/2){
-				  sumP+=batchP[head];
-				  sumM+=batchM[head];
-			  }
-			  else {
-				  sumP-=batchP[tail];
-				  sumM-=batchM[tail];
-				  tail++;
+			  sumP+=batchP[head];
+			  sumM+=batchM[head];
+			  if (head-tail>=fragLen/2){
 				  if (sumM/sumP>maxR){
 					  maxR=sumM/sumP;
 					  maxIdx=(head+tail)/2;
 				  }
+				  sumP-=batchP[tail];
+				  sumM-=batchM[tail];
+				  tail++;
 			  }
 		  }
 		  _currentRatioR=maxR;
@@ -199,8 +195,8 @@ public class NpfDensityWriter implements DensityWriter{
 	  
 	  private void doWrite(long left, long right) throws IOException {
 			long centerPos = (long)_currentMaxPos - left;
-//		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
-			bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentP) + "\t" + nf.format(_currentM) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
+		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
+//			bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentP) + "\t" + nf.format(_currentM) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
 		    _currentMax = 0.0f;
 		    _currentMaxPos = 0;
 		    _startPeakPos = 0l;

@@ -230,9 +230,7 @@ public class KDEChromosome {
 	    int arrPos = 0;
 	    boolean aboveThreshold = false;
 	    float[] sumPM=new float[2];
-	    if(!bg_used && !ip_used){
-	    	System.out.println("running the P/M version");
-	    }
+	    System.out.println("running the P/M version");
 	    for(int i = 0; i < numBases; ++i){
 	      currentChromPos = i + _firstCut;
 	      arrPos = i % BATCH_SIZE;
@@ -251,7 +249,10 @@ public class KDEChromosome {
 	    		  if(!bg_used && ip_used) {
 	    			  density[arrPos] = (float)ipdensity(settings, currentChromPos, cutIdx, cuts, ipchr);
 	    		  } else {
-	    			  density[arrPos] = (float)fulldensity(settings, currentChromPos, cutIdx, cuts, bgchr, ipchr);
+//	    			  density[arrPos] = (float)fulldensity(settings, currentChromPos, cutIdx, cuts, bgchr, ipchr);
+	    			  density[arrPos] = (float)fulldensityPM(settings, currentChromPos, cutIdx, cuts, bgchr, ipchr, sumPM);
+	    			  densityP[arrPos] = sumPM[0];
+			    	  densityM[arrPos] = sumPM[1];
 	    		  }
 	    	  }
 	      }
@@ -270,13 +271,13 @@ public class KDEChromosome {
 	        System.out.print(".");
 	      if(i % BATCH_SIZE == mod){
 //	        dw.writeDensity(density, 0, BATCH_SIZE);
-	    	  dw.writeDensityPM(density, 0, BATCH_SIZE, densityP, densityM);
+	    	  dw.writeDensityPM(density, 0, BATCH_SIZE, densityP, densityM, settings.offset);
 	      }
 	    }
 	    
 	    int len = numBases % BATCH_SIZE;
 //	    dw.writeDensity(density, 0, len);
-	    dw.writeDensityPM(density, 0, len, densityP, densityM);
+	    dw.writeDensityPM(density, 0, len, densityP, densityM, settings.offset);
 	    
 	    if(verboseFlag){
 	      System.out.println();
@@ -811,6 +812,123 @@ public class KDEChromosome {
     				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
     			  }
     		  }  		
+	    	  //sum += settings.precompute[d];
+	      }
+	    }
+	    
+	    return (float)(sum / (double)settings.bandwidth);
+	  }
+  
+  private float fulldensityPM(Settings settings, long chromPos, int cutIdx, Sequence[] cuts, WigChromosome bgdata, WigChromosome ipdata, float[] sumPM){
+	    
+	    long minPos = chromPos - settings.window;
+	    long maxPos = chromPos + settings.window;
+	    
+	    double[] PRECOMPUTE = settings.precompute;
+	    
+	    double sum = 0.0;
+	    int b;
+	    int c;
+	    sumPM[0]=0.0f;
+	    sumPM[1]=0.0f;
+	    
+	    for(int i = cutIdx-1; i > -1; --i){
+	      if (cuts[i].getPosition() < minPos) 
+	        break;
+	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
+	      
+	      
+	      if(!settings.dnaseExperimentType) {
+	    	  if (d<20){
+		    	  if (cuts[i].getStrand())
+		    		  sumPM[0]+=settings.precompute[d];
+		    	  else sumPM[1]+=settings.precompute[d];
+	    	  }
+	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
+	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
+	    		  c = (int)cuts[i].getPosition() - ipdata.getStart(); //index of ip for particular sequence i
+	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+	    			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
+	    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
+	    			  }
+	    		  }
+	    	  } else {
+	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
+	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
+	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
+		    		  c = (int)cuts[i].getPosition() - ipdata.getStart() - _sequenceLength;
+	        		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+		    			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
+		    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
+		    			  }
+	        		  }  		  
+	    		  }
+	    	  }
+	      } else {
+	    	  if(cuts[i].getStrand()) {
+	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
+	    		  c = (int)cuts[i].getPosition() - ipdata.getStart();
+	    	  } else {
+	    		  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength; //index of bg for particular sequence i
+	    		  c = (int)cuts[i].getPosition() - ipdata.getStart() - _sequenceLength;
+	    	  }
+  		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+  			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
+  				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
+  			  }
+  		  }  		
+	    	  //sum += settings.precompute[d];
+	      }
+	    }
+	    
+	    for(int i = cutIdx; i < cuts.length; ++i){
+	      if (cuts[i].getPosition() > maxPos) break;
+	      
+	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
+	      
+	      //System.out.println(d);
+	      if(d > PRECOMPUTE.length-1)
+	        throw new IllegalStateException();
+	      
+	      if(!settings.dnaseExperimentType) {
+	    	  if (d<20){
+		    	  if (cuts[i].getStrand())
+		    		  sumPM[0]+=settings.precompute[d];
+		    	  else sumPM[1]+=settings.precompute[d];
+	    	  }
+	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
+	    		  b = (int)cuts[i].getPosition() -bgdata.getStart();
+	    		  c = (int)cuts[i].getPosition() - ipdata.getStart();
+	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+	    			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
+	    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000);
+	    			  }	    		  }
+	    	  } else {
+	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
+	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
+	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
+		    		  c = (int)cuts[i].getPosition() - ipdata.getStart() - _sequenceLength;
+	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+		    			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
+		    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
+		    			  }	        		  }		  
+	    		  }
+	    	  }
+	      } else {
+	    	  if(cuts[i].getStrand()) {
+	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
+	    		  c = (int)cuts[i].getPosition() - ipdata.getStart();
+	    	  } else {
+	    		  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength; //index of bg for particular sequence i
+	    		  c = (int)cuts[i].getPosition() - ipdata.getStart() - _sequenceLength;
+	    	  }
+  		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+  			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
+  				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
+  			  }
+  		  }  		
 	    	  //sum += settings.precompute[d];
 	      }
 	    }

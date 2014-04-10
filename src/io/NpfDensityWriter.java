@@ -85,8 +85,8 @@ public class NpfDensityWriter implements DensityWriter{
 	    }
 	  }
 	  
-	  public int getMaxLeft(float[] batch,float[] batchP, float[] batchM, int cent){
-		  int fragLen=200, head, tail, maxIdx=cent-fragLen/4;
+	  public int getMaxLeft(float[] batch,float[] batchP, float[] batchM, int cent, int offset){
+		  int head, tail, maxIdx=cent-offset/2;
 		  double sumP=0.001, sumM=0.001, maxR=1.0;
 		  tail=cent;
 		  for (head=cent; head>=0; head--){
@@ -94,7 +94,7 @@ public class NpfDensityWriter implements DensityWriter{
 				  break;
 			  sumP+=batchP[head];
 			  sumM+=batchM[head];
-			  if (tail-head>=fragLen/2){
+			  if (tail-head>=offset){
 				  if (sumP/sumM>maxR){
 					  maxR=sumP/sumM;
 					  maxIdx=(head+tail)/2;
@@ -108,8 +108,8 @@ public class NpfDensityWriter implements DensityWriter{
 		  return maxIdx;
 	  }
 	  
-	  public int getMaxRight(float[] batch,float[] batchP, float[] batchM, int cent){
-		  int fragLen=200, head, tail, maxIdx=cent+fragLen/4;
+	  public int getMaxRight(float[] batch,float[] batchP, float[] batchM, int cent, int offset){
+		  int head, tail, maxIdx=cent+offset/2;
 		  double sumP=0.001, sumM=0.001, maxR=1.0;
 		  tail=cent;
 		  for (head=cent; head<batch.length; head++){
@@ -117,7 +117,7 @@ public class NpfDensityWriter implements DensityWriter{
 				  break;
 			  sumP+=batchP[head];
 			  sumM+=batchM[head];
-			  if (head-tail>=fragLen/2){
+			  if (head-tail>=offset){
 				  if (sumM/sumP>maxR){
 					  maxR=sumM/sumP;
 					  maxIdx=(head+tail)/2;
@@ -131,7 +131,7 @@ public class NpfDensityWriter implements DensityWriter{
 		  return maxIdx;
 	  }
 	  
-	  public void writeDensityPM(float[] batch, int start, int length, float[] batchP, float[] batchM)
+	  public void writeDensityPM(float[] batch, int start, int length, float[] batchP, float[] batchM, int offset)
 		      throws IOException {
 		    int end = start + length;
 		    int cent=0,beg=0;
@@ -162,12 +162,12 @@ public class NpfDensityWriter implements DensityWriter{
 		          }
 		        }else{
 		          _aboveThreshold = false;
-		          _currentMean/=(i-beg+1);
+		          _currentMean/=(_currentPos-_startPeakPos+1);
 //		          _currentP/=(i-beg+1);
 //		          _currentM/=(i-beg+1);
 		          // issue: may have overlap
-		          left=getMaxLeft(batch, batchP, batchM, (beg+i)/2);
-		          right=getMaxRight(batch, batchP, batchM, (beg+i)/2);
+		          left=getMaxLeft(batch, batchP, batchM, (beg+i)/2, offset);
+		          right=getMaxRight(batch, batchP, batchM, (beg+i)/2, offset);
 		          _currentP=0;
 		          _currentM=0;
 		          for (int j=(int)left;j<=(int)right;j++){
@@ -178,7 +178,7 @@ public class NpfDensityWriter implements DensityWriter{
 		          }
 		          left+=batchStart;
 		          right+=(batchStart+1);
-		          doWrite(left, right);
+		          doWrite(Math.min(_startPeakPos, left), right);
 //		          doWrite(batchP, batchM, (beg+i)/2);
 		        }
 		      }
@@ -195,7 +195,8 @@ public class NpfDensityWriter implements DensityWriter{
 	  
 	  private void doWrite(long left, long right) throws IOException {
 			long centerPos = (long)_currentMaxPos - left;
-		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
+			// issue: _currentMaxPos may not be in the region
+		    bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentRatioL) + "\t" + nf.format(_currentRatioR) + "\t" + nf.format(_currentMean) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
 //			bw.write(chr + "\t" + left + "\t" + (right-1) + "\t" + (chr + "." + _counter++) + "\t" + nf.format(_currentP) + "\t" + nf.format(_currentM) + "\t" + nf.format(_currentMax) + "\t" + "-1" + "\t" + "-1" + "\t" + centerPos + "\n");
 		    _currentMax = 0.0f;
 		    _currentMaxPos = 0;

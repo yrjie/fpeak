@@ -363,7 +363,7 @@ public class Main {
 					  break;
 				  if(!seqs[i].getStrand()) {
 					  if(Math.abs(seqs[i].getPosition()-last_pos-prior) < max_range) {
-						  Integer temp = new Integer((int)(seqs[i].getPosition()-last_pos));
+						  Integer temp = new Integer((int)(Math.abs(seqs[i].getPosition()-last_pos)));
 						  d_temp.add(temp);
 						  cnt++;
 						  if (cnt>max_cnt)

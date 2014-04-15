@@ -21,8 +21,7 @@ import io.DensityWriter;
 public class Main {
   
   public static void main(String[] argv) throws Exception {
-   
-    
+	  
     Options opts = new Options();
     opts.addOption("s",true,"wiggle track step (default=1)");
     opts.addOption("l",true, "feature length (default=600)");

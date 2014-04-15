@@ -212,7 +212,7 @@ public class NpfDensityWriter implements DensityWriter{
 		        	  right=_currentPosR;
 		          }
 		          else{
-		        	  _currentMaxL=_currentMaxR=1.0f;
+		        	  _currentMaxL=_currentMaxR=-1.0f;
 		        	  left=_startPeakPos;
 		        	  right=_currentPos;
 		          }

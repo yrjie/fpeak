@@ -342,6 +342,7 @@ public class Main {
 	  int max_range = 500; //max search range for sequences
 	  int max = 1000000; //1 million is a good estimate
 	  int prior = 150;
+	  int max_cnt=100,cnt;
 	  if(max > seqs.length - max_range-k) {
 		  max = seqs.length-max_range-k;
 	  }
@@ -351,6 +352,7 @@ public class Main {
 	  		break;
 	  	}
 		  if(seqs[j].getStrand()) {
+			  cnt=0;
 			  last_pos = seqs[j].getPosition();
 			  int back_check = j - 10000;
 			  if(j < 10000) {
@@ -363,6 +365,9 @@ public class Main {
 					  if(Math.abs(seqs[i].getPosition()-last_pos-prior) < max_range) {
 						  Integer temp = new Integer((int)(seqs[i].getPosition()-last_pos));
 						  d_temp.add(temp);
+						  cnt++;
+						  if (cnt>max_cnt)
+							  break;
 					  }
 				  }
 			  }

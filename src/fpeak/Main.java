@@ -221,7 +221,7 @@ public class Main {
       
       DensityWriter dw = null;
     	if(outputFormat.equals("npf")) {
-    		dw = new NpfDensityWriter(ofile, chrs[i].getChromosome(), chrs[i].getFirstPos(), step);	
+    		dw = new NpfDensityWriter(ofile, chrs[i].getChromosome(), chrs[i].getFirstPos(), fragment_offset);	
     	}
 
       //Function takes all? or new function for each?

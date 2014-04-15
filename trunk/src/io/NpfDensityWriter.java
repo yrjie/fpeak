@@ -18,7 +18,7 @@ public class NpfDensityWriter implements DensityWriter{
 
   private BufferedWriter bw;
   private final long chromPos;
-  private final int offset;
+  private final int winSize;
   private final String chr;
   
   private float _threshold = 0.0f;
@@ -42,18 +42,18 @@ public class NpfDensityWriter implements DensityWriter{
   
   private NumberFormat nf;
   
-  public NpfDensityWriter(File f, String chr, long chromStart, int offset) throws IOException {
+  public NpfDensityWriter(File f, String chr, long chromStart, int win) throws IOException {
 	    bw = new BufferedWriter(new FileWriter(f));
 	    this.chromPos = chromStart;
 	    this.chr = chr;
-	    this.offset = offset;
+	    this.winSize = win;
 	    nf = NumberFormat.getNumberInstance();
 	    nf.setGroupingUsed(false);
 	    nf.setMaximumFractionDigits(8);
 	    nf.setMinimumFractionDigits(8);
 	    
-	    _queP=new float[offset];
-	    _queM=new float[offset];
+	    _queP=new float[winSize];
+	    _queM=new float[winSize];
 	    _currentPos = chromPos;
 	  }
 	  
@@ -152,7 +152,7 @@ public class NpfDensityWriter implements DensityWriter{
 		          _currentMax = batch[i];
 		          _currentMaxPos = _currentPos;
 		          _currentMean = batch[i];
-		          tail=(int)(_currentPos-_startPeakPos)%offset;
+		          tail=(int)(_currentPos-_startPeakPos)%winSize;
 		          _queP[tail]=batchP[i];
 		          _queM[tail]=batchM[i];
 		          _currentP=0.001f+batchP[i];
@@ -167,16 +167,16 @@ public class NpfDensityWriter implements DensityWriter{
 		        if(batch[i] > _threshold){
 		          _currentMax = Math.max(_currentMax, batch[i]);
 		          _currentMean+=batch[i];
-		          tail=(int)(_currentPos-_startPeakPos)%offset;
-		          if (_currentPos-_startPeakPos>=offset){
+		          tail=(int)(_currentPos-_startPeakPos)%winSize;
+		          if (_currentPos-_startPeakPos>=winSize){
 		        	  tempRatio=_currentP/_currentM;
 		        	  if (tempRatio>_currentMaxL){
 		        		  _currentMaxL=tempRatio;
-		        		  _currentPosL=_currentPos-offset/2;
+		        		  _currentPosL=_currentPos-winSize/2;
 		        	  }
 		        	  if (tempRatio<_currentMaxR){
 		        		  _currentMaxR=tempRatio;
-		        		  _currentPosR=_currentPos-offset/2;
+		        		  _currentPosR=_currentPos-winSize/2;
 		        	  }
 		        	  _currentP-=_queP[tail];
 		        	  _currentM-=_queM[tail];

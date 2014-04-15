@@ -166,6 +166,9 @@ public class Main {
 	  	}
     }
 
+	if (verbose){
+    	System.out.println("Total reads: "+ncuts);
+    }
     KDEChromosome.Settings settings = null;
     if(bandwidth > 0 || window > 0){
       settings = new KDEChromosome.Settings(bandwidth,window,threshold,fragment_offset, ncuts);
@@ -221,7 +224,7 @@ public class Main {
       
       DensityWriter dw = null;
     	if(outputFormat.equals("npf")) {
-    		dw = new NpfDensityWriter(ofile, chrs[i].getChromosome(), chrs[i].getFirstPos(), fragment_offset);	
+    		dw = new NpfDensityWriter(ofile, chrs[i].getChromosome(), chrs[i].getFirstPos(), fragment_size);	
     	}
 
       //Function takes all? or new function for each?

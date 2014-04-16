@@ -395,15 +395,13 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    	  if(cuts[i].getStrand()) {
 //	    		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
 	    		  sum += settings.precompute[d];
 	    	  } else {
-	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
 //	    			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
 	    			  sum += settings.precompute[d];
 	    		  }
-	    	  }
 	      } else {
 	    	  sum += settings.precompute[d];
 	      }
@@ -424,15 +422,13 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
-	    		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
+	    	  if(cuts[i].getStrand()) {
+//	    		  d = Math.abs((int)(cuts[i].getPosition() + settings.offset - chromPos));
 	    		  sum += settings.precompute[d];
 	    	  } else {
-	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
-	    			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
+//	    			  d = Math.abs((int)(cuts[i].getPosition() - settings.offset - chromPos));
 	    			  sum += settings.precompute[d];    		  
 	    		  }
-	    	  }
 	      } else {
 	    	  sum += settings.precompute[d];
 	      }
@@ -553,21 +549,19 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    	  if(cuts[i].getStrand()) {
 //	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
 	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
-	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
 //	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 	        		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
 	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
-	        		  }  		  
+	        		  }
 	    		  }
-	    	  }
 	      } else {
 	    	  if(cuts[i].getStrand()) {
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
@@ -596,21 +590,19 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
-	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
+	    	  if(cuts[i].getStrand()) {
+//	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() -bgdata.getStart();
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
 	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
-	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
-	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
+//	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
 	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	        		  }		  
 	    		  }
-	    	  }
 	      } else {
 	    	  if(cuts[i].getStrand()) {
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
@@ -844,7 +836,7 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
+	    	  if(cuts[i].getStrand()) {
 //	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
 	    		  c = (int)cuts[i].getPosition() - ipdata.getStart(); //index of ip for particular sequence i
@@ -854,7 +846,6 @@ public class KDEChromosome {
 	    			  }
 	    		  }
 	    	  } else {
-	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
 //	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 		    		  c = (int)cuts[i].getPosition() - ipdata.getStart() - _sequenceLength;
@@ -862,8 +853,7 @@ public class KDEChromosome {
 		    			  if(c >= 0 && c < (int)ipdata.getLength() && ipdata.getValues()[c] > 0) {
 		    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
 		    			  }
-	        		  }  		  
-	    		  }
+	        		  }
 	    	  }
 	      } else {
 	    	  if(cuts[i].getStrand()) {
@@ -897,8 +887,8 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
-	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
+	    	  if(cuts[i].getStrand()) {
+//	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() -bgdata.getStart();
 	    		  c = (int)cuts[i].getPosition() - ipdata.getStart();
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
@@ -906,8 +896,7 @@ public class KDEChromosome {
 	    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000);
 	    			  }	    		  }
 	    	  } else {
-	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
-	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
+//	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 		    		  c = (int)cuts[i].getPosition() - ipdata.getStart() - _sequenceLength;
 	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
@@ -915,7 +904,6 @@ public class KDEChromosome {
 		    				  sum += settings.precompute[d] * (double)bgdata.getValues()[b] / ((double)ipdata.getValues()[c]/1000d);
 		    			  }	        		  }		  
 	    		  }
-	    	  }
 	      } else {
 	    	  if(cuts[i].getStrand()) {
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i

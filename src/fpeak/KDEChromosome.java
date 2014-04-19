@@ -217,6 +217,7 @@ public class KDEChromosome {
 	        System.out.print(".");
 	      }
 	      System.out.println();
+	      System.out.println("running the P/M version");
 	    }
 	    int numBases = (int)Math.abs(_lastCut - _firstCut);
 	    
@@ -230,7 +231,6 @@ public class KDEChromosome {
 	    int arrPos = 0;
 	    boolean aboveThreshold = false;
 	    float[] sumPM=new float[2];
-	    System.out.println("running the P/M version");
 	    for(int i = 0; i < numBases; ++i){
 	      currentChromPos = i + _firstCut;
 	      arrPos = i % BATCH_SIZE;

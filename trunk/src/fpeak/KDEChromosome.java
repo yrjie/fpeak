@@ -626,7 +626,7 @@ public class KDEChromosome {
 	    }
 	    
 	    if (chromPos==settings.pos){
-	    	System.out.println(cntL+"\t"+cntR+"\t"+sumD/(cntL+cntR)+"\t"+sum / (double)settings.bandwidth);
+	    	System.out.println(chromPos+"\t"+cntL+"\t"+cntR+"\t"+sumD/(cntL+cntR)+"\t"+sum / (double)settings.bandwidth);
 	    	System.exit(0);
 	    }
 	    return (float)(sum / (double)settings.bandwidth);

@@ -537,10 +537,16 @@ public class KDEChromosome {
 	    sumPM[0]=0.0f;
 	    sumPM[1]=0.0f;
 	    
+	    int cntL=0, cntR=0, sumD=0;
+	    
 	    for(int i = cutIdx-1; i > -1; --i){
 	      if (cuts[i].getPosition() < minPos) 
 	        break;
 	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
+	      if (chromPos==settings.pos){
+		    	cntL++;
+		    	sumD+=d;
+	      }
 	      
 	      
 	      if(!settings.dnaseExperimentType) {
@@ -579,6 +585,10 @@ public class KDEChromosome {
 	      if (cuts[i].getPosition() > maxPos) break;
 	      
 	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
+	      if (chromPos==settings.pos){
+		    	cntR++;
+		    	sumD+=d;
+	      }
 	      
 	      //System.out.println(d);
 	      if(d > PRECOMPUTE.length-1)
@@ -615,6 +625,10 @@ public class KDEChromosome {
 	      }
 	    }
 	    
+	    if (chromPos==settings.pos){
+	    	System.out.println(cntL+"\t"+cntR+"\t"+sumD/(cntL+cntR)+"\t"+sum / (double)settings.bandwidth);
+	    	System.exit(0);
+	    }
 	    return (float)(sum / (double)settings.bandwidth);
 	  }
   
@@ -979,6 +993,7 @@ public class KDEChromosome {
     public final int offset;
     public final boolean dnaseExperimentType;
     public final long ncuts;
+    public long pos;
     
     public Settings(long bandwidth, long window, float threshold, int offset, long ncuts){
       this.bandwidth = bandwidth;
@@ -992,13 +1007,14 @@ public class KDEChromosome {
       precompute = precompute(window, bandwidth, ncuts);
     }
     
-    public Settings(long featureLength, float threshold, int offset, long ncuts){
+    public Settings(long featureLength, float threshold, int offset, long ncuts, long pos){
       this.bandwidth = computeBandwidth(featureLength);
       this.window = computeOptimalWindow(bandwidth);
       this.threshold = threshold;
       this.offset = offset;
       this.step = 0;
       this.ncuts = ncuts;
+      this.pos=pos;
       
       dnaseExperimentType = isDNase(offset);
       precompute = precompute(window, bandwidth, ncuts);

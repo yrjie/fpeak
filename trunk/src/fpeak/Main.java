@@ -31,6 +31,7 @@ public class Main {
     opts.addOption("wg", true, "wg threshold set (defualt = calculated)");
     opts.addOption("c", true, "genomic count of sequence reads (defualt = calculated)");
     opts.addOption("h", false, "print usage");
+    opts.addOption("pos", true, "testing position");
     opts.addOption(OptionBuilder.withArgName( "input dir" )
         .hasArg()
         .withDescription( "input directory (default=current directory)" )
@@ -82,6 +83,7 @@ public class Main {
     long window = 0l;
   	long ncuts = 0l;
 	float temp_threshold = 0f;
+	long pos=0;
 
     System.out.println("Fpeak Version 1.0");
     
@@ -125,6 +127,8 @@ public class Main {
 		if(cmd.hasOption("c"))
 			ncuts = Long.parseLong(cmd.getOptionValue("c"));
 
+		if (cmd.hasOption("pos"))
+			pos=Long.parseLong(cmd.getOptionValue("pos"));
       // TESTING ONLY
    //   if(cmd.hasOption("w")) // window
    //     window = Long.parseLong(cmd.getOptionValue("w"));
@@ -169,11 +173,7 @@ public class Main {
     	System.out.println("Total reads: "+ncuts);
     }
     KDEChromosome.Settings settings = null;
-    if(bandwidth > 0 || window > 0){
-      settings = new KDEChromosome.Settings(bandwidth,window,threshold,fragment_offset, ncuts);
-    }else{
-      settings = new KDEChromosome.Settings(featureLength, threshold, fragment_offset, ncuts);
-    }
+    settings = new KDEChromosome.Settings(featureLength, threshold, fragment_offset, ncuts, pos);
 
 	float wg_threshold = wgThreshold(settings, chrs);    
 	if(temp_threshold != 0f) {

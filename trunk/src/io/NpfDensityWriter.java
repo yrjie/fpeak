@@ -218,10 +218,10 @@ public class NpfDensityWriter implements DensityWriter{
 		        	  left=_startPeakPos;
 		        	  right=_currentPos;
 		          }
-//		          if (right-left<winSize){
-//		        	  left-=winSize/2;
-//		        	  right+=winSize/2;
-//		          }
+		          if (right-left<winSize){
+		        	  left-=winSize/2;
+		        	  right+=winSize/2;
+		          }
 		          doWrite(left, right);
 //		          doWrite(Math.min(_startPeakPos, left), right);
 //		          doWrite(batchP, batchM, (beg+i)/2);

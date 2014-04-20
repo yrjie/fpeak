@@ -172,13 +172,15 @@ public class NpfDensityWriter implements DensityWriter{
 		          tail=(int)(_currentPos-_startPeakPos)%winSize;
 		          if (_currentPos-_startPeakPos>=winSize){
 		        	  tempRatio=_currentP/_currentM;
-		        	  if (tempRatio>_currentMaxL){
-		        		  _currentMaxL=tempRatio;
-		        		  _currentPosL=_currentPos-winSize/2;
-		        	  }
-		        	  if (tempRatio<_currentMaxR){
-		        		  _currentMaxR=tempRatio;
-		        		  _currentPosR=_currentPos-winSize/2;
+		        	  if (batch[i]<2* _threshold){
+			        	  if (tempRatio>_currentMaxL){
+			        		  _currentMaxL=tempRatio;
+			        		  _currentPosL=_currentPos-winSize/2;
+			        	  }
+			        	  if (tempRatio<_currentMaxR){
+			        		  _currentMaxR=tempRatio;
+			        		  _currentPosR=_currentPos-winSize/2;
+			        	  }
 		        	  }
 		        	  _currentP-=_queP[tail];
 		        	  _currentM-=_queM[tail];
@@ -218,10 +220,10 @@ public class NpfDensityWriter implements DensityWriter{
 		        	  left=_startPeakPos;
 		        	  right=_currentPos;
 		          }
-		          if (right-left<winSize){
-		        	  left-=winSize/2;
-		        	  right+=winSize/2;
-		          }
+//		          if (right-left<winSize){
+//		        	  left-=winSize/2;
+//		        	  right+=winSize/2;
+//		          }
 		          doWrite(left, right);
 //		          doWrite(Math.min(_startPeakPos, left), right);
 //		          doWrite(batchP, batchM, (beg+i)/2);

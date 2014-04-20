@@ -46,6 +46,8 @@ public class NpfDensityWriter implements DensityWriter{
 	    bw = new BufferedWriter(new FileWriter(f));
 	    this.chromPos = chromStart;
 	    this.chr = chr;
+	    if (win<=0)
+	    	win=1;
 	    this.winSize = win;
 	    nf = NumberFormat.getNumberInstance();
 	    nf.setGroupingUsed(false);
@@ -216,10 +218,10 @@ public class NpfDensityWriter implements DensityWriter{
 		        	  left=_startPeakPos;
 		        	  right=_currentPos;
 		          }
-		          if (right-left<winSize){
-		        	  left-=winSize/2;
-		        	  right+=winSize/2;
-		          }
+//		          if (right-left<winSize){
+//		        	  left-=winSize/2;
+//		        	  right+=winSize/2;
+//		          }
 		          doWrite(left, right);
 //		          doWrite(Math.min(_startPeakPos, left), right);
 //		          doWrite(batchP, batchM, (beg+i)/2);

@@ -181,7 +181,7 @@ public class NpfDensityWriter implements DensityWriter{
 			        	  if (tempRatio<_currentMaxR){
 			        		  _currentMaxR=tempRatio;
 //			        		  _currentPosR=_currentPos-winSize/2;
-			        		  _currentPosL=_currentPos;
+			        		  _currentPosR=_currentPos;
 			        	  }
 //		        	  }
 		        	  _currentP-=_queP[tail];

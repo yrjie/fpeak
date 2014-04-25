@@ -213,7 +213,7 @@ public class NpfDensityWriter implements DensityWriter{
 //		          }
 //		          left+=batchStart;
 //		          right+=(batchStart+1);
-		          if (_currentPosL<_currentPosR){
+		          if (_currentPos-_startPeakPos<1000&&_currentPosL<_currentPosR){
 		        	  left=_currentPosL;
 		        	  right=_currentPosR;
 		          }

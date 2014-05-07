@@ -558,13 +558,13 @@ public class KDEChromosome {
 	    	  if(cuts[i].getStrand()) {
 	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
-	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
 	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
-	        		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+	        		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	        		  }
 	    		  }
@@ -603,13 +603,13 @@ public class KDEChromosome {
 	    	  if(cuts[i].getStrand()) {
 	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() -bgdata.getStart();
-	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
 	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
-	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0) {
+	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	        		  }		  
 	    		  }

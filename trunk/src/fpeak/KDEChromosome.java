@@ -555,18 +555,20 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand()) {
+	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
 	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
+	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
 	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 	        		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	        		  }
+	    		  }
 	    		  }
 	      } else {
 	    	  if(cuts[i].getStrand()) {
@@ -600,18 +602,20 @@ public class KDEChromosome {
 		    		  sumPM[0]+=settings.precompute[d];
 		    	  else sumPM[1]+=settings.precompute[d];
 	    	  }
-	    	  if(cuts[i].getStrand()) {
+	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
 	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() -bgdata.getStart();
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
+	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
 	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
-	        		  }		  
+	        		  }		 
+	    		  }
 	    		  }
 	      } else {
 	    	  if(cuts[i].getStrand()) {

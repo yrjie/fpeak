@@ -418,7 +418,8 @@ public class Main {
 	      sum += PRECOMPUTE[d];
 	    }
 	    
-	    return (float)(sum / (double)settings.bandwidth);
+//	    return (float)(sum / (double)settings.bandwidth);
+	    return (float) sum;
   }
   
   private static File[] getFiles(String directory, String[] files){

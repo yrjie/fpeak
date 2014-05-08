@@ -646,7 +646,7 @@ public class KDEChromosome {
 	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
 //	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
 	    				  sum+=sig * (double)bgdata.getValues()[b];
-	        		  }		 
+	        		  }
 	    		  }
 	    		  }
 	      } else {

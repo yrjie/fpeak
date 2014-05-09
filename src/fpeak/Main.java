@@ -32,6 +32,7 @@ public class Main {
     opts.addOption("c", true, "genomic count of sequence reads (defualt = calculated)");
     opts.addOption("h", false, "print usage");
     opts.addOption("pos", true, "testing position");
+    opts.addOption("clip", false, "clip at the end");
     opts.addOption(OptionBuilder.withArgName( "input dir" )
         .hasArg()
         .withDescription( "input directory (default=current directory)" )
@@ -70,6 +71,7 @@ public class Main {
     int step = 1;
     boolean showHelp = false;
     boolean verbose = false;
+    boolean clip=false;
     String inputDirectory = null;
     String backgroundDirectory = null;
     String ploidyDirectory = null;
@@ -129,6 +131,9 @@ public class Main {
 
 		if (cmd.hasOption("pos"))
 			pos=Long.parseLong(cmd.getOptionValue("pos"));
+		
+		if (cmd.hasOption("clip"))
+			clip=true;
       // TESTING ONLY
    //   if(cmd.hasOption("w")) // window
    //     window = Long.parseLong(cmd.getOptionValue("w"));
@@ -223,7 +228,7 @@ public class Main {
       
       DensityWriter dw = null;
     	if(outputFormat.equals("npf")) {
-    		dw = new NpfDensityWriter(ofile, chrs[i].getChromosome(), chrs[i].getFirstPos(), fragment_size);	
+    		dw = new NpfDensityWriter(ofile, chrs[i].getChromosome(), chrs[i].getFirstPos(), fragment_size, clip);	
     	}
 
       //Function takes all? or new function for each?

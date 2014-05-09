@@ -39,13 +39,15 @@ public class NpfDensityWriter implements DensityWriter{
   private long _currentPosL=0, _currentPosR=0;
   private double _currentRatioL = 0;
   private double _currentRatioR = 0;
+  private boolean clip;
   
   private NumberFormat nf;
   
-  public NpfDensityWriter(File f, String chr, long chromStart, int win) throws IOException {
+  public NpfDensityWriter(File f, String chr, long chromStart, int win, boolean clip) throws IOException {
 	    bw = new BufferedWriter(new FileWriter(f));
 	    this.chromPos = chromStart;
 	    this.chr = chr;
+	    this.clip=clip;
 	    if (win<=0)
 	    	win=1;
 	    this.winSize = win;
@@ -214,10 +216,14 @@ public class NpfDensityWriter implements DensityWriter{
 //		          left+=batchStart;
 //		          right+=(batchStart+1);
 		          if (_currentPosL<_currentPosR){
-		        	  left=_currentPosL;
-		        	  right=_currentPosR;
-//		        	  left=_startPeakPos;
-//		        	  right=_currentPos;
+		        	  if (clip){
+			        	  left=_currentPosL;
+			        	  right=_currentPosR;
+		        	  }
+		        	  else {
+			        	  left=_startPeakPos;
+			        	  right=_currentPos;
+		        	  }
 		          }
 		          else{
 		        	  _currentMaxL=_currentMaxR=-1.0f;

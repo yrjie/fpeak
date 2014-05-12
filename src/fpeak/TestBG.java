@@ -17,7 +17,7 @@ public class TestBG {
 		WigChromosome ipchr = null;
 		Options opts = new Options();
 		String ploidyDirectory = null;
-		String[] ipfiles = {"chr10.iff"};
+		String[] ipfiles = {"chr21.iff"};
 		opts.addOption(OptionBuilder.withArgName( "ploidy dir" )
 				.hasArg()
 	            .withDescription( "ploidy/input directory (default=none)" )

@@ -32,6 +32,7 @@ public class TestBG {
 			}
 			File[] ploidy = getFiles(ploidyDirectory, ipfiles);
 			ipchr = IffReader.read(ploidy[0]);
+			System.out.println("Finished reading");
 			for (int i=0;i<ipchr.getLength();i++){
 				System.out.println((i+ipchr.getStart())+": "+ipchr.getValues()[i]);
 			}

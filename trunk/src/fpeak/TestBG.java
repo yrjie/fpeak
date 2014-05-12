@@ -15,11 +15,9 @@ public class TestBG {
 	
 	public static void main(String args[]){
 		WigChromosome ipchr = null;
-		File ip_file_used = null;
 		Options opts = new Options();
 		String ploidyDirectory = null;
 		String[] ipfiles = {};
-		File[] ploidy_files=null;
 		opts.addOption(OptionBuilder.withArgName( "ploidy dir" )
 				.hasArg()
 	            .withDescription( "ploidy/input directory (default=none)" )
@@ -28,8 +26,10 @@ public class TestBG {
 		CommandLineParser parser = new GnuParser();
 		try{
 			CommandLine cmd = parser.parse(opts, args);
-			if(cmd.hasOption("p")) //ploidy|input directory
+			if(cmd.hasOption("p")){ //ploidy|input directory
 		        ploidyDirectory = cmd.getOptionValue("p");
+		        System.out.println(ploidyDirectory);
+			}
 			File[] ploidy = getFiles(ploidyDirectory, ipfiles);
 			ipchr = IffReader.read(ploidy[0]);
 			for (int i=0;i<ipchr.getLength();i++){

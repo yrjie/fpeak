@@ -58,20 +58,29 @@ public class BedReader {
           long s = Long.parseLong(arr[1]);
           long e = Long.parseLong(arr[2]);
           long diff = e - s;
+          int len;
           if(!lengthSet) {
         	  sequenceLength = (int)diff;
         	  lengthSet = true;
           }
+          try{
+    		  len=Integer.parseInt(arr[4]);
+    		  if (len<0)
+    			  len=-len;
+    	  }
+    	  catch(Exception ex){
+    		  len=0;
+    	  }
           if(Math.abs(diff) > 1){
             //long mid = (long)Math.floor(diff / 2.0);
             if(arr[5].equals("+")) {
-            	seq = new KDEChromosome.Sequence(s, arr[5].equals("+"));
+            	seq = new KDEChromosome.Sequence(s, arr[5].equals("+"), len);
             } else {
-            	seq = new KDEChromosome.Sequence(e, arr[5].equals("+"));
+            	seq = new KDEChromosome.Sequence(e, arr[5].equals("+"), len);
             }
             currentCuts.add(seq);
           }else{
-            seq = new KDEChromosome.Sequence(s, arr[5].equals("+"));
+            seq = new KDEChromosome.Sequence(s, arr[5].equals("+"), len);
             currentCuts.add(seq);
           }
         } catch (NumberFormatException e) {

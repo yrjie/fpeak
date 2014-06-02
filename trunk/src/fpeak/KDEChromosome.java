@@ -1104,8 +1104,8 @@ public class KDEChromosome {
       double[] precompute = new double[(int)(window + 1)];
       for(int i = 0; i < precompute.length; ++i){
         double x = i / (double)bandwidth;
-        precompute[i] = sequenceNormalize( Math.exp(-(x * x) / 2) / PI2 , ncuts);
-//        precompute[i] =  Math.exp(-(x * x) / 2);
+//        precompute[i] = sequenceNormalize( Math.exp(-(x * x) / 2) / PI2 , ncuts);
+        precompute[i] =  Math.exp(-(x * x) / 2);
       }
       return precompute;
     }

@@ -542,6 +542,9 @@ public class KDEChromosome {
 	    for(int i = cutIdx-1; i > -1; --i){
 	      if (cuts[i].getPosition() < minPos) 
 	        break;
+	      int maxD=cuts[i].fragLen;
+	      if (maxD==0)
+	    	  maxD=2*settings.offset;
 	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
 	      if (chromPos==settings.pos){
 		    	cntL++;
@@ -558,7 +561,7 @@ public class KDEChromosome {
 //	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
 	    	  if(cuts[i].getStrand()) {
 	    		  if (cuts[i].getPosition() <= chromPos){
-	    			  if (d<2*settings.offset)
+	    			  if (d<maxD)
 	    				  sig=1.0;
 	    			  else sig=0;
 	    		  }
@@ -566,14 +569,14 @@ public class KDEChromosome {
 //	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() - bgdata.getStart(); //index of bg for particular sequence i
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
-	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
-//	    			  sum += sig*(double)bgdata.getValues()[b];
+//	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
+	    			  sum += sig*(double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
 //	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
     			  if(!cuts[i].getStrand()) {
     				  if (cuts[i].getPosition() >= chromPos){
-		    			  if (d<2*settings.offset)
+		    			  if (d<maxD)
 		    				  sig=1.0;
 		    			  else sig=0;
 		    		  }
@@ -581,8 +584,8 @@ public class KDEChromosome {
 //	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 	        		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
-	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
-//	        			  sum += sig*(double)bgdata.getValues()[b];
+//	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
+	        			  sum += sig*(double)bgdata.getValues()[b];
 	        		  }
 	    		  }
 	    		  }
@@ -601,6 +604,9 @@ public class KDEChromosome {
 	    
 	    for(int i = cutIdx; i < cuts.length; ++i){
 	      if (cuts[i].getPosition() > maxPos) break;
+	      int maxD=cuts[i].fragLen;
+	      if (maxD==0)
+	    	  maxD=2*settings.offset;
 	      
 	      int d = Math.abs((int)(cuts[i].getPosition() - chromPos));
 	      if (chromPos==settings.pos){
@@ -621,7 +627,7 @@ public class KDEChromosome {
 //	    	  if(cuts[i].getStrand() && cuts[i].getPosition() <= chromPos) {
     		  if(cuts[i].getStrand()) {
     			  if (cuts[i].getPosition() <= chromPos){
-	    			  if (d<2*settings.offset)
+	    			  if (d<maxD)
 	    				  sig=1.0;
 	    			  else sig=0;
 	    		  }
@@ -629,14 +635,14 @@ public class KDEChromosome {
 //	    		  d = Math.abs((int)(cuts[i].getPosition() + (int)settings.offset - chromPos));
 	    		  b = (int)cuts[i].getPosition() -bgdata.getStart();
 	    		  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
-	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
-//	    			  sum+=sig* (double)bgdata.getValues()[b];
+//	    			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
+	    			  sum+=sig* (double)bgdata.getValues()[b];
 	    		  }
 	    	  } else {
 //	    		  if(!cuts[i].getStrand() && cuts[i].getPosition() >= chromPos) {
 	    		  if(!cuts[i].getStrand()) {
 	    			  if (cuts[i].getPosition() >= chromPos){
-		    			  if (d<2*settings.offset)
+		    			  if (d<maxD)
 		    				  sig=1.0;
 		    			  else sig=0;
 		    		  }
@@ -644,8 +650,8 @@ public class KDEChromosome {
 //	    			  d = Math.abs((int)(cuts[i].getPosition() - (int)settings.offset - chromPos));
 	    			  b = (int)cuts[i].getPosition() - bgdata.getStart() - _sequenceLength;
 	    			  if(b >= 0 && b < (int)bgdata.getLength() && bgdata.getValues()[b] > 0 &&d<settings.window) {
-	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
-//	    				  sum+=sig * (double)bgdata.getValues()[b];
+//	        			  sum += settings.precompute[d] * (double)bgdata.getValues()[b];
+	    				  sum+=sig * (double)bgdata.getValues()[b];
 	        		  }
 	    		  }
 	    		  }
@@ -1009,6 +1015,7 @@ public class KDEChromosome {
   {
       long position;
       boolean strand;
+      int fragLen;
       
       public long getPosition() {
     	  	return position;
@@ -1026,14 +1033,16 @@ public class KDEChromosome {
     	  this.strand = str;
       }
       
-      public Sequence(long x, boolean y) {
+      public Sequence(long x, boolean y, int len) {
           this.position = x;
           this.strand = y;
+          this.fragLen= len;
       }
       
       public Sequence() {
     	  this.position = 0;
     	  this.strand = false;
+    	  this.fragLen= 0;
       }
       
       //CompareTo overload

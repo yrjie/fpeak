@@ -542,6 +542,7 @@ public class KDEChromosome {
 	    for(int i = cutIdx-1; i > -1; --i){
 	      if (cuts[i].getPosition() < minPos) 
 	        break;
+	      if (cuts[i].fragLen<200) continue;
 	      int maxD=cuts[i].fragLen;
 	      if (maxD==0)
 	    	  maxD=2*settings.offset;
@@ -610,6 +611,7 @@ public class KDEChromosome {
 	    
 	    for(int i = cutIdx; i < cuts.length; ++i){
 	      if (cuts[i].getPosition() > maxPos) break;
+	      if (cuts[i].fragLen<200) continue;
 	      int maxD=cuts[i].fragLen;
 	      if (maxD==0)
 	    	  maxD=2*settings.offset;

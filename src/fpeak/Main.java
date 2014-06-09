@@ -408,7 +408,7 @@ public class Main {
 	    
 	    double sum = 0.0;
 	    for(int i = cutIdx-1; i > -1; --i){
-	      if (cuts[i] < minPos) 
+	      if (cuts[i] < minPos)
 	        break;
 	      int d = Math.abs((int)(cuts[i] - chromPos));
 	      sum += settings.precompute[d];

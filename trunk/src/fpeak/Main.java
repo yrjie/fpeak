@@ -308,10 +308,10 @@ public class Main {
 	      densities[i] = density(settings, (long)settings.window, (int)(cuts.length/2.0), cuts);
 	    }
 	    
-//	    double mean = Util.mean(densities);
-//	    double std = Util.std(densities);
-	    double mean = Util.mean(densities)/settings.offset;
-	    double std = Util.std(densities)/settings.offset;
+	    double mean = Util.mean(densities);
+	    double std = Util.std(densities);
+//	    double mean = Util.mean(densities)/settings.offset;
+//	    double std = Util.std(densities)/settings.offset;
 	    
 	    return (float)(mean + settings.threshold * std);
   } 

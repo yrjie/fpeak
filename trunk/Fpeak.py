@@ -103,7 +103,6 @@ def refinePeak(peakfile, plustab, minustab):
 	if len(peak)<1:
 	    continue
 
-
 genSigFile(sys.argv[1],plusSig)
 genSigFile(sys.argv[2],minusSig)
 #cmd='sh mergePeak.sh '+plusSig+' '+minusSig+' '+prefix
